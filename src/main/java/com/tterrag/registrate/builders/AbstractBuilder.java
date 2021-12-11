@@ -5,22 +5,28 @@ import java.util.Arrays;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.tterrag.registrate.AbstractRegistrate;
+import com.tterrag.registrate.fabric.RegistryObject;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 import com.tterrag.registrate.util.entry.LazyRegistryEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullBiFunction;
+import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import net.minecraft.core.Registry;
 import net.minecraft.tags.Tag;
-import net.minecraftforge.common.util.NonNullFunction;
-import net.minecraftforge.registries.IForgeRegistryEntry;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
 /**
  * Base class which most builders should extend, instead of implementing [@link {@link Builder} directly.
@@ -38,7 +44,7 @@ import net.minecraftforge.registries.RegistryObject;
  * @see Builder
  */
 @RequiredArgsConstructor
-public abstract class AbstractBuilder<R extends IForgeRegistryEntry<R>, T extends R, P, S extends AbstractBuilder<R, T, P, S>> implements Builder<R, T, P, S> {
+public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuilder<R, T, P, S>> implements Builder<R, T, P, S> {
 
     @Getter(onMethod_ = {@Override})
     private final AbstractRegistrate<?> owner;
@@ -93,7 +99,7 @@ public abstract class AbstractBuilder<R extends IForgeRegistryEntry<R>, T extend
         if (!tagsByType.containsKey(type)) {
             setData(type, (ctx, prov) -> tagsByType.get(type).stream()
                     .map(t -> (Tag.Named<R>) t)
-                    .map(prov::tag)
+                    .map(prov::Tag)
                     .forEach(b -> b.add(asSupplier().get())));
         }
         tagsByType.putAll(type, Arrays.asList(tags));
@@ -123,13 +129,25 @@ public abstract class AbstractBuilder<R extends IForgeRegistryEntry<R>, T extend
     /**
      * Set the lang key for this entry to the default value (specified by {@link RegistrateLangProvider#getAutomaticName(NonNullSupplier)}). Generally, specific helpers from concrete builders should be used
      * instead.
-     * 
+     *
      * @param langKeyProvider
      *            A function to get the translation key from the entry
      * @return this {@link Builder}
      */
     public S lang(NonNullFunction<T, String> langKeyProvider) {
-        return lang(langKeyProvider, (p, t) -> p.getAutomaticName(t));
+        return lang(langKeyProvider, (p, t) -> {
+            if(t instanceof Block block)
+                return Registry.BLOCK.getKey(block).getPath();
+            if(t instanceof Item item)
+                return Registry.ITEM.getKey(item).getPath();
+            if(t instanceof Enchantment enchantment)
+                return Registry.ENCHANTMENT.getKey(enchantment).getPath();
+            if(t instanceof EntityType entityType)
+                return Registry.ENTITY_TYPE.getKey(entityType).getPath();
+            if(t instanceof BlockEntityType blockEntityType)
+                return Registry.BLOCK_ENTITY_TYPE.getKey(blockEntityType).getPath();
+            return null;
+        });
     }
 
     /**

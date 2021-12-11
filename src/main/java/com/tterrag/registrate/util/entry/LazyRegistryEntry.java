@@ -1,8 +1,7 @@
 package com.tterrag.registrate.util.entry;
 
-import javax.annotation.Nullable;
-
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import org.jetbrains.annotations.Nullable;
 
 public class LazyRegistryEntry<T> implements NonNullSupplier<T> {
     

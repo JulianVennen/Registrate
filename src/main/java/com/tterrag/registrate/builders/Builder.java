@@ -3,6 +3,7 @@ package com.tterrag.registrate.builders;
 import java.util.function.Function;
 
 import com.tterrag.registrate.AbstractRegistrate;
+import com.tterrag.registrate.fabric.RegistryObject;
 import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateProvider;
@@ -11,9 +12,6 @@ import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 import com.tterrag.registrate.util.nullness.NonNullConsumer;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
-
-import net.minecraftforge.registries.IForgeRegistryEntry;
-import net.minecraftforge.registries.RegistryObject;
 
 /**
  * A Builder creates registry entries. A Builder instance has a constant name which will be used for the resultant object, they cannot be reused for different names. It holds a parent object that will
@@ -30,7 +28,7 @@ import net.minecraftforge.registries.RegistryObject;
  * @param <S>
  *            Self type
  */
-public interface Builder<R extends IForgeRegistryEntry<R>, T extends R, P, S extends Builder<R, T, P, S>> extends NonNullSupplier<RegistryEntry<T>> {
+public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> extends NonNullSupplier<RegistryEntry<T>> {
 
     /**
      * Complete the current entry, and return the {@link RegistryEntry} that will supply the built entry once it is available. The builder can be used afterwards, and changes made will reflect the
@@ -165,7 +163,7 @@ public interface Builder<R extends IForgeRegistryEntry<R>, T extends R, P, S ext
      *            the callback to invoke
      * @return this {@link Builder}
      */
-    default <OR extends IForgeRegistryEntry<OR>> S onRegisterAfter(Class<? super OR> dependencyType, NonNullConsumer<? super T> callback) {
+    default <OR> S onRegisterAfter(Class<? super OR> dependencyType, NonNullConsumer<? super T> callback) {
         return onRegister(e -> {
             if (getOwner().<OR>isRegistered(dependencyType)) {
                 callback.accept(e);
@@ -200,7 +198,7 @@ public interface Builder<R extends IForgeRegistryEntry<R>, T extends R, P, S ext
      * @return the {@link Builder} returned by the given function
      */
     @SuppressWarnings("unchecked")
-    default <R2 extends IForgeRegistryEntry<R2>, T2 extends R2, P2, S2 extends Builder<R2, T2, P2, S2>> S2 transform(NonNullFunction<S, S2> func) {
+    default <R2, T2 extends R2, P2, S2 extends Builder<R2, T2, P2, S2>> S2 transform(NonNullFunction<S, S2> func) {
         return func.apply((S) this);
     }
 

@@ -5,19 +5,19 @@ import java.util.function.Function;
 import com.tterrag.registrate.AbstractRegistrate;
 
 import net.minecraft.core.Registry;
-import net.minecraft.data.DataGenerator;
 import net.minecraft.tags.Tag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.data.ExistingFileHelper;
+
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 
 public class RegistrateItemTagsProvider extends RegistrateTagsProvider<Item> {
 
     private final Function<Tag.Named<Block>, Tag.Builder> builderLookup;
 
     @SuppressWarnings({ "deprecation", "null" })
-    public RegistrateItemTagsProvider(AbstractRegistrate<?> owner, ProviderType<RegistrateItemTagsProvider> type, String name, DataGenerator generatorIn, ExistingFileHelper existingFileHelper, RegistrateTagsProvider<Block> blockTags) {
-        super(owner, type, name, generatorIn, Registry.ITEM, existingFileHelper);
+    public RegistrateItemTagsProvider(AbstractRegistrate<?> owner, ProviderType<RegistrateItemTagsProvider> type, String name, FabricDataGenerator generatorIn, RegistrateTagsProvider<Block> blockTags) {
+        super(owner, type, name, generatorIn, Registry.ITEM);
         this.builderLookup = blockTags::getOrCreateRawBuilder;
     }
 

@@ -1,112 +1,98 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        maven {
-            name = "forge"
-            url = "https://maven.minecraftforge.net/"
-        }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.+', changing: true
-    }
-}
 plugins {
+    id 'fabric-loom' version '0.10-SNAPSHOT'
     id "io.freefair.lombok" version "6.1.0-m3"
-    id 'com.matthewprenger.cursegradle' version '1.4.0'
-    id 'org.ajoberstar.grgit' version '4.1.0'
+    id 'maven-publish'
 }
 
-apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'maven-publish'
-apply plugin: 'eclipse'
-apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
-
-boolean dev = System.getenv('RELEASE') == null || System.getenv('RELEASE').equals('false')
-def getVersion = {
-    def raw = grgit.describe(longDescr: true, tags:true)
-    def desc = (raw == null ? '0.0-0-unknown' : grgit.describe(longDescr: true, tags:true)).split('-') as List
-    def hash = desc.remove(desc.size() - 1).substring(1)
-    def offset = desc.remove(desc.size() - 1)
-    return project.mod_version.replace('x', offset) + (System.getenv("BUILD_NUMBER") == null ? "+${hash}" : '')
-}
+sourceCompatibility = JavaVersion.VERSION_16
+targetCompatibility = JavaVersion.VERSION_16
 
 version = "MC${minecraft_version}-${getVersion()}"
 group = "com.tterrag.registrate"
 archivesBaseName = "Registrate"
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-minecraft {
-    mappings channel: 'official', version: minecraft_version
-
-    runs {
-        client {
-            taskName 'testmod_client'
-            
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES,REGISTRYDUMP'
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                testmod {
-                    source sourceSets.test
-                    source sourceSets.main
-                }
-            }
-        }
-        server {
-            taskName 'testmod_server'
-            
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES,REGISTRYDUMP'
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                testmod {
-                    source sourceSets.test
-                    source sourceSets.main
-                }
-            }
-        }
-        data {
-            taskName 'testmod_data'
-        
-            workingDirectory project.file('run')
-            
-            environment 'target', 'fmluserdevdata'
-
-            property 'forge.logging.markers', 'REGISTRIES,REGISTRYDUMP'
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                testmod {
-                    source sourceSets.test
-                    source sourceSets.main
-                }
-            }
-            
-            args '--mod', 'testmod', '--all', '--output', rootProject.file('src/generated/resources/'), '--existing', rootProject.file('src/test/resources') 
-        }
+repositories {
+    maven {
+        url 'https://repo.maven.apache.org/maven2'
+        name 'Maven Central'
     }
-}
 
-sourceSets.main.resources {
-    srcDir 'src/generated/resources'
+    mavenLocal()
+
+    // Add repositories to retrieve artifacts from in here.
+    // You should only use this when depending on other mods because
+    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
+    // for more information about repositories.
 }
 
 dependencies {
     implementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
 
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.2"
-    testRuntimeOnly    "org.junit.jupiter:junit-jupiter-engine:5.7.2"
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // Fabric API. This is technically optional, but you probably want it anyway.
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    modImplementation(include("me.alphamode:ForgeTags:1.0"))
+
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+
+    // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
+    // You may need to force-disable transitiveness on them.
 }
+
+loom {
+    runs {
+        datagen {
+            server()
+
+            name "Data Generation"
+            vmArg "-Dfabric-api.datagen"
+            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
+
+            runDir "build/datagen"
+        }
+    }
+}
+assemble.dependsOn runDatagen
+
+loom {
+    accessWidenerPath = file("src/main/resources/registrate.accesswidener")
+}
+
+loom {
+    runs {
+        datagen {
+            server()
+
+            name "Data Generation"
+            vmArg "-Dfabric-api.datagen"
+            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
+
+            runDir "build/datagen"
+        }
+    }
+}
+assemble.dependsOn runDatagen
+
+loom {
+    runs {
+        datagen {
+            server()
+
+            name "Data Generation"
+            vmArg "-Dfabric-api.datagen"
+            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
+
+            runDir "build/datagen"
+        }
+    }
+}
+assemble.dependsOn runDatagen
 
 lombok {
     version = "1.18.20"
@@ -115,18 +101,9 @@ lombok {
 
 delombok {
     format = [
-        'suppressWarnings': 'skip',
-        'javaLangAsFQN': 'skip'
+            'suppressWarnings': 'skip',
+            'javaLangAsFQN': 'skip'
     ]
-}
-
-jar {
-    exclude('assets/**', 'data/**', '.cache/**') // Exclude generated assets, can't find a better way to do this :(
-    manifest {
-        attributes(
-            'FMLModType': 'GAMELIBRARY'
-        )
-    }
 }
 
 task sourceJar(type: Jar, dependsOn: classes) {
@@ -140,56 +117,62 @@ javadoc {
     options.addStringOption('tag', 'apiNote:a:API Note:')
 }
 
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // ensure that the encoding is set to UTF-8, no matter what the system default is
+    // this fixes some edge cases with special characters not displaying correctly
+    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
+    // If Javadoc is generated, this must be specified in that task too.
+    it.options.encoding = "UTF-8"
+
+    // The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
+    // JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
+    // We'll use that if it's available, but otherwise we'll use the older option.
+    def targetVersion = 16
+    if (JavaVersion.current().isJava9Compatible()) {
+        it.options.release = targetVersion
+    }
+}
+
+java {
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}"}
+    }
+}
+
+// configure the maven publication
 publishing {
-    tasks.publish.dependsOn 'build'
     publications {
         mavenJava(MavenPublication) {
-            artifact jar
-            artifact sourceJar
-        }
-    }
-
-    repositories {
-        if (project.hasProperty('mavendir')) {
-            maven { url mavendir }
-        }
-    }
-}
-
-repositories {
-    maven {
-        url 'https://repo.maven.apache.org/maven2'
-        name 'Maven Central'
-    }
-}
-
-String getChangelogText() {
-    def changelogFile = file('changelog.txt')
-    String str = ''
-    int lineCount = 0
-    boolean done = false
-    changelogFile.eachLine {
-        if (done || it == null) {
-            return
-        }
-        if (it.size() > 1) {
-            def temp = it
-            if (lineCount == 0) {
-                temp = "Chisel ${version}"
-                temp = "<h2>$temp</h2>"
-            } else if (it.startsWith('-')) {
-                temp = "&nbsp;&nbsp;&nbsp;$temp"
-                temp = temp.replaceAll("(\\S+\\/\\S+)#([0-9]+)\\b", "<a href=\"https://github.com/\$1/issues/\$2\">\$0</a>")
-                temp = temp.replaceAll("#([0-9]+)\\b(?!<\\/a>)", "<a href=\"https://github.com/$github_project/issues/\$1\">\$0</a>")
-            } else {
-                temp = "<h4>$temp</h4>"
+            // add all the jars that should be included when publishing to maven
+            artifact(remapJar) {
+                builtBy remapJar
             }
-            str += "$temp<br/>"
-            lineCount++
-            return
-        } else {
-            done = true
+            artifact(sourcesJar) {
+                builtBy remapSourcesJar
+            }
         }
     }
-    return str
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
+    }
 }

@@ -1,14 +1,14 @@
 package com.tterrag.registrate.builders;
 
-import javax.annotation.Nullable;
-
 import com.tterrag.registrate.AbstractRegistrate;
+import com.tterrag.registrate.fabric.EnvExecutor;
+import com.tterrag.registrate.fabric.RegistryObject;
+import com.tterrag.registrate.fabric.ScreenHandlerRegistryExtension;
 import com.tterrag.registrate.util.entry.MenuEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
 
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.network.FriendlyByteBuf;
@@ -16,10 +16,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.registries.RegistryObject;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
+import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
+import org.jetbrains.annotations.Nullable;
 
 public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & MenuAccess<T>,  P> extends AbstractBuilder<MenuType<?>, MenuType<T>, P, MenuBuilder<T, S, P>> {
     
@@ -37,8 +38,9 @@ public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & Men
         
         T create(M menu, Inventory inv, Component displayName);
     }
-    
-    private final ForgeMenuFactory<T> factory;
+
+    private final MenuFactory<T> factory;
+    private final ForgeMenuFactory<T> forgeFactory;
     private final NonNullSupplier<ScreenFactory<T, S>> screenFactory;
 
     public MenuBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, MenuFactory<T> factory, NonNullSupplier<ScreenFactory<T, S>> screenFactory) {
@@ -47,18 +49,26 @@ public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & Men
 
     public MenuBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, ForgeMenuFactory<T> factory, NonNullSupplier<ScreenFactory<T, S>> screenFactory) {
         super(owner, parent, name, callback, MenuType.class);
-        this.factory = factory;
+        this.forgeFactory = factory;
+        this.factory = null;
         this.screenFactory = screenFactory;
     }
 
     @Override
     protected @NonnullType MenuType<T> createEntry() {
-        ForgeMenuFactory<T> factory = this.factory;
         NonNullSupplier<MenuType<T>> supplier = this.asSupplier();
-        MenuType<T> ret = IForgeMenuType.create((windowId, inv, buf) -> factory.create(supplier.get(), windowId, inv, buf));
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+        MenuType<T> ret;
+        ScreenHandlerRegistryExtension.createOnly = true;
+        if (this.factory == null) {
+            ForgeMenuFactory<T> factory = this.forgeFactory;
+            ret = ScreenHandlerRegistry.registerExtended(null, (windowId, inv, buf) -> factory.create(supplier.get(), windowId, inv, buf));
+        } else {
+            MenuFactory<T> factory = this.factory;
+            ret = ScreenHandlerRegistry.registerSimple(null, (syncId, inventory) -> factory.create(supplier.get(), syncId, inventory));
+        }
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
             ScreenFactory<T, S> screenFactory = this.screenFactory.get();
-            MenuScreens.<T, S>register(ret, (type, inv, displayName) -> screenFactory.create(type, inv, displayName));
+            ScreenRegistry.<T, S>register(ret, (type, inv, displayName) -> screenFactory.create(type, inv, displayName));
         });
         return ret;
     }

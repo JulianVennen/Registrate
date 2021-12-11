@@ -2,8 +2,6 @@ package com.tterrag.registrate.util.entry;
 
 import java.util.Optional;
 
-import javax.annotation.Nullable;
-
 import com.tterrag.registrate.AbstractRegistrate;
 
 import net.minecraft.core.BlockPos;
@@ -11,7 +9,9 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.RegistryObject;
+
+import com.tterrag.registrate.fabric.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 
 public class BlockEntityEntry<T extends BlockEntity> extends RegistryEntry<BlockEntityType<T>> {
 

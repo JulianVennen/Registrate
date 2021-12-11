@@ -4,7 +4,8 @@ import com.tterrag.registrate.AbstractRegistrate;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.RegistryObject;
+
+import com.tterrag.registrate.fabric.RegistryObject;
 
 public class BlockEntry<T extends Block> extends ItemProviderEntry<T> {
 

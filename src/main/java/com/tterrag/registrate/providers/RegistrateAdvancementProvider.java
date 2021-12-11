@@ -7,8 +7,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import javax.annotation.Nullable;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.tterrag.registrate.AbstractRegistrate;
@@ -20,7 +18,10 @@ import net.minecraft.data.DataProvider;
 import net.minecraft.data.HashCache;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fml.LogicalSide;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import org.jetbrains.annotations.Nullable;
 
 @Log4j2
 public class RegistrateAdvancementProvider implements RegistrateProvider, Consumer<Advancement> {
@@ -30,14 +31,14 @@ public class RegistrateAdvancementProvider implements RegistrateProvider, Consum
     private final AbstractRegistrate<?> owner;
     private final DataGenerator generator;
 
-    public RegistrateAdvancementProvider(AbstractRegistrate<?> owner, DataGenerator generatorIn) {
+    public RegistrateAdvancementProvider(AbstractRegistrate<?> owner, FabricDataGenerator generatorIn) {
         this.owner = owner;
         this.generator = generatorIn;
     }
 
     @Override
-    public LogicalSide getSide() {
-        return LogicalSide.SERVER;
+    public EnvType getSide() {
+        return EnvType.SERVER;
     }
     
     public TranslatableComponent title(String category, String name, String title) {

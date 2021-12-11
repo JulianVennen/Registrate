@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 import com.tterrag.registrate.AbstractRegistrate;
 
 import lombok.RequiredArgsConstructor;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTablesProvider;
+
 import net.minecraft.data.loot.BlockLoot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
@@ -18,18 +21,24 @@ import net.minecraft.world.level.storage.loot.predicates.ConditionUserBuilder;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 
-@RequiredArgsConstructor
-public class RegistrateBlockLootTables extends BlockLoot implements RegistrateLootTables {
+//@RequiredArgsConstructor
+public class RegistrateBlockLootTables extends FabricBlockLootTablesProvider implements RegistrateLootTables {
     
     private final AbstractRegistrate<?> parent;
     private final Consumer<RegistrateBlockLootTables> callback;
+
+    public RegistrateBlockLootTables(AbstractRegistrate<?> parent, Consumer<RegistrateBlockLootTables> callback, FabricDataGenerator dataGenerator) {
+        super(dataGenerator);
+        this.parent = parent;
+        this.callback = callback;
+    }
     
     @Override
-    protected void addTables() {
+    protected void generateBlockLootTables() {
         callback.accept(this);
     }
 
-    @Override
+//    @Override
     protected Iterable<Block> getKnownBlocks() {
         return parent.getAll(Block.class).stream().map(Supplier::get).collect(Collectors.toList());
     }

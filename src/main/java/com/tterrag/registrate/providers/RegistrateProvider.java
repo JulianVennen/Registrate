@@ -1,9 +1,10 @@
 package com.tterrag.registrate.providers;
 
 import net.minecraft.data.DataProvider;
-import net.minecraftforge.fml.LogicalSide;
+
+import net.fabricmc.api.EnvType;
 
 public interface RegistrateProvider extends DataProvider {
     
-    LogicalSide getSide();
+    EnvType getSide();
 }

@@ -6,27 +6,25 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
-
 import com.tterrag.registrate.AbstractRegistrate;
-import com.tterrag.registrate.util.OneTimeEventReceiver;
+import com.tterrag.registrate.fabric.EnvExecutor;
+import com.tterrag.registrate.fabric.RegistryObject;
+import com.tterrag.registrate.mixin.accessor.BlockEntityRenderersAccessor;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.RegistryObject;
 
 /**
  * A builder for block entities, allows for customization of the valid blocks.
@@ -116,19 +114,14 @@ public class BlockEntityBuilder<T extends BlockEntity, P> extends AbstractBuilde
      */
     public BlockEntityBuilder<T, P> renderer(NonNullSupplier<NonNullFunction<BlockEntityRendererProvider.Context, BlockEntityRenderer<? super T>>> renderer) {
         if (this.renderer == null) { // First call only
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> this::registerRenderer);
+            EnvExecutor.runWhenOn(EnvType.CLIENT, () -> this::registerRenderer);
         }
         this.renderer = renderer;
         return this;
     }
     
     protected void registerRenderer() {
-        OneTimeEventReceiver.addModListener(FMLClientSetupEvent.class, $ -> {
-            var renderer = this.renderer;
-            if (renderer != null) {
-                BlockEntityRenderers.register(getEntry(), renderer.get()::apply);
-            }
-        });
+        onRegister(entry -> BlockEntityRenderersAccessor.invokeRegister(entry, renderer.get()::apply));
     }
 
     @Override

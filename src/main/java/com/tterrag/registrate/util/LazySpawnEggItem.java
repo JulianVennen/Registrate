@@ -4,9 +4,9 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.annotation.Nullable;
-
+import com.tterrag.registrate.mixin.accessor.SpawnEggItemAccessor;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,7 +34,6 @@ import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 public class LazySpawnEggItem<T extends Entity> extends SpawnEggItem {
 
@@ -45,15 +44,13 @@ public class LazySpawnEggItem<T extends Entity> extends SpawnEggItem {
         this.typeIn = type;
     }
     
-    private static final Field _EGGS = ObfuscationReflectionHelper.findField(SpawnEggItem.class, "BY_ID");
-    
     @SuppressWarnings("unchecked")
     public void injectType() {
         try {
-            Map<EntityType<?>, SpawnEggItem> EGGS = (Map<EntityType<?>, SpawnEggItem>) _EGGS.get(this);
+            Map<EntityType<?>, SpawnEggItem> EGGS = SpawnEggItemAccessor.getEggMap();
             EGGS.put(typeIn.get(), this);
             EGGS.remove(null);
-        } catch (IllegalArgumentException | IllegalAccessException e) {
+        } catch (IllegalArgumentException e) {
             throw new RuntimeException(e);
         }
     }

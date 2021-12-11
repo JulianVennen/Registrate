@@ -3,7 +3,8 @@ package com.tterrag.registrate.util.entry;
 import com.tterrag.registrate.AbstractRegistrate;
 
 import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.RegistryObject;
+
+import com.tterrag.registrate.fabric.RegistryObject;
 
 public class ItemEntry<T extends Item> extends ItemProviderEntry<T> {
 

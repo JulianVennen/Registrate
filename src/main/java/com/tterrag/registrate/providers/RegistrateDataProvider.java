@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.tterrag.registrate.AbstractRegistrate;
@@ -19,8 +17,10 @@ import com.tterrag.registrate.util.nullness.NonnullType;
 import lombok.extern.log4j.Log4j2;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.HashCache;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.forge.event.lifecycle.GatherDataEvent;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import org.jetbrains.annotations.Nullable;
 
 @Log4j2
 public class RegistrateDataProvider implements DataProvider {
@@ -35,21 +35,21 @@ public class RegistrateDataProvider implements DataProvider {
     private final String mod;
     private final Map<ProviderType<?>, RegistrateProvider> subProviders = new LinkedHashMap<>();
 
-    public RegistrateDataProvider(AbstractRegistrate<?> parent, String modid, GatherDataEvent event) {
+    public RegistrateDataProvider(AbstractRegistrate<?> parent, String modid, FabricDataGenerator generator) {
         this.mod = modid;
-        EnumSet<LogicalSide> sides = EnumSet.noneOf(LogicalSide.class);
-        if (event.includeServer()) {
-            sides.add(LogicalSide.SERVER);
-        }
-        if (event.includeClient()) {
-            sides.add(LogicalSide.CLIENT);
-        }
+        EnumSet<EnvType> sides = EnumSet.noneOf(EnvType.class);
+//        if (event.includeServer()) {
+            sides.add(EnvType.SERVER);
+//        }
+//        if (event.includeClient()) {
+            sides.add(EnvType.CLIENT);
+//        }
         
         log.debug(DebugMarkers.DATA, "Gathering providers for sides: {}", sides);
         Map<ProviderType<?>, RegistrateProvider> known = new HashMap<>();
         for (String id : TYPES.keySet()) {
             ProviderType<?> type = TYPES.get(id);
-            RegistrateProvider prov = type.create(parent, event, known);
+            RegistrateProvider prov = type.create(parent, generator, known);
             known.put(type, prov);
             if (sides.contains(prov.getSide())) {
                 log.debug(DebugMarkers.DATA, "Adding provider for type: {}", id);

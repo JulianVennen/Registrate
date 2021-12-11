@@ -2,19 +2,18 @@ package com.tterrag.registrate.util.entry;
 
 import java.util.Optional;
 
-import javax.annotation.Nullable;
-
 import com.tterrag.registrate.AbstractRegistrate;
 
+import net.minecraft.core.Registry;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.IForgeRegistryEntry;
-import net.minecraftforge.registries.RegistryObject;
 
-public class FluidEntry<T extends ForgeFlowingFluid> extends RegistryEntry<T> {
+import com.tterrag.registrate.fabric.RegistryObject;
+import com.tterrag.registrate.fabric.SimpleFlowableFluid;
+import org.jetbrains.annotations.Nullable;
+
+public class FluidEntry<T extends SimpleFlowableFluid> extends RegistryEntry<T> {
 
     private final @Nullable BlockEntry<? extends Block> block;
 
@@ -22,18 +21,18 @@ public class FluidEntry<T extends ForgeFlowingFluid> extends RegistryEntry<T> {
         super(owner, delegate);
         BlockEntry<? extends Block> block = null;
         try {
-            block = BlockEntry.cast(getSibling(ForgeRegistries.BLOCKS));
+            block = BlockEntry.cast(getSibling(Registry.BLOCK));
         } catch (IllegalArgumentException e) {} // TODO add way to get entry optionally
         this.block = block;
     }
 
     @Override
-    public <R extends IForgeRegistryEntry<? super T>> boolean is(R entry) {
+    public <R> boolean is(R entry) {
         return get().isSame((Fluid) entry);
     }
 
     @SuppressWarnings({ "unchecked", "null" })
-    <S extends ForgeFlowingFluid> S getSource() {
+    <S extends SimpleFlowableFluid> S getSource() {
         return (S) get().getSource();
     }
 

@@ -6,14 +6,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-
+import com.tterrag.registrate.fabric.LanguageProvider;
+import net.fabricmc.api.EnvType;
 import org.apache.commons.lang3.StringUtils;
 
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
+import org.jetbrains.annotations.Nullable;
 
+import net.minecraft.core.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.HashCache;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -22,9 +24,6 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.data.LanguageProvider;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.registries.IForgeRegistryEntry;
 
 public class RegistrateLangProvider extends LanguageProvider implements RegistrateProvider {
     
@@ -54,8 +53,8 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
     }
 
     @Override
-    public LogicalSide getSide() {
-        return LogicalSide.CLIENT;
+    public EnvType getSide() {
+        return EnvType.CLIENT;
     }
     
     @Override
@@ -74,12 +73,12 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
                 .collect(Collectors.joining(" "));
     }
     
-    public String getAutomaticName(NonNullSupplier<? extends IForgeRegistryEntry<?>> sup) {
-        return toEnglishName(sup.get().getRegistryName().getPath());
-    }
+//    public String getAutomaticName(NonNullSupplier<? extends IForgeRegistryEntry<?>> sup) {
+//        return toEnglishName(sup.get().getRegistryName().getPath());
+//    }
     
     public void addBlock(NonNullSupplier<? extends Block> block) {
-        addBlock(block, getAutomaticName(block));
+        addBlock(block, Registry.BLOCK.getKey(block.get()).getPath());
     }
     
     public void addBlockWithTooltip(NonNullSupplier<? extends Block> block, String tooltip) {
@@ -93,7 +92,7 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
     }
     
     public void addItem(NonNullSupplier<? extends Item> item) {
-        addItem(item, getAutomaticName(item));
+        addItem(item, Registry.ITEM.getKey(item.get()).getPath());
     }
     
     public void addItemWithTooltip(NonNullSupplier<? extends Item> block, String name, List<@NonnullType String> tooltip) {
@@ -116,7 +115,7 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
     }
     
     public void addEntityType(NonNullSupplier<? extends EntityType<?>> entity) {
-        addEntityType(entity, getAutomaticName(entity));
+        addEntityType(entity, Registry.ENTITY_TYPE.getKey(entity.get()).getPath());
     }
     
     // Automatic en_ud generation

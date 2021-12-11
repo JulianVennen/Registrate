@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.experimental.Delegate;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
+import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.Tag.Named;
@@ -20,8 +21,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.common.crafting.IIngredientSerializer;
-import net.minecraftforge.registries.IForgeRegistryEntry;
 
 /**
  * A helper for data generation when using ingredients as input(s) to recipes.<br>
@@ -35,7 +34,7 @@ public final class DataIngredient extends Ingredient {
 
     private interface Excludes {
 
-        IIngredientSerializer<DataIngredient> getSerializer();
+//        IIngredientSerializer<DataIngredient> getSerializer();
 
         void toNetwork(FriendlyByteBuf buffer);
 
@@ -51,7 +50,7 @@ public final class DataIngredient extends Ingredient {
     private DataIngredient(Ingredient parent, ItemLike item) {
         super(Stream.empty());
         this.parent = parent;
-        this.id = item.asItem().getRegistryName();
+        this.id = Registry.ITEM.getKey(item.asItem());
         this.criteriaFactory = prov -> RegistrateRecipeProvider.has(item);
     }
     
@@ -69,10 +68,10 @@ public final class DataIngredient extends Ingredient {
         this.criteriaFactory = prov -> RegistrateRecipeProvider.inventoryTrigger(predicates);
     }
 
-    @Override
-    public IIngredientSerializer<DataIngredient> getSerializer() {
-        throw new UnsupportedOperationException("DataIngredient should only be used for data generation!");
-    }
+//    @Override
+//    public IIngredientSerializer<DataIngredient> getSerializer() {
+//        throw new UnsupportedOperationException("DataIngredient should only be used for data generation!");
+//    }
     
     public InventoryChangeTrigger.TriggerInstance getCritereon(RegistrateRecipeProvider prov) {
         return criteriaFactory.apply(prov);
@@ -80,12 +79,12 @@ public final class DataIngredient extends Ingredient {
     
     @SuppressWarnings("unchecked")
     @SafeVarargs
-    public static <T extends ItemLike & IForgeRegistryEntry<?>> DataIngredient items(NonNullSupplier<? extends T> first, NonNullSupplier<? extends T>... others) {
+    public static <T extends ItemLike> DataIngredient items(NonNullSupplier<? extends T> first, NonNullSupplier<? extends T>... others) {
         return items(first.get(), (T[]) Arrays.stream(others).map(Supplier::get).toArray(ItemLike[]::new));
     }
 
     @SafeVarargs
-    public static <T extends ItemLike & IForgeRegistryEntry<?>> DataIngredient items(T first, T... others) {
+    public static <T extends ItemLike> DataIngredient items(T first, T... others) {
         return ingredient(Ingredient.of(ObjectArrays.concat(first, others)), first);
     }
 

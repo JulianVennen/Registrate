@@ -1,7 +1,5 @@
 package com.tterrag.registrate;
 
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-
 public class Registrate extends AbstractRegistrate<Registrate> {
     
     /**
@@ -13,7 +11,7 @@ public class Registrate extends AbstractRegistrate<Registrate> {
      * @return The {@link Registrate} instance
      */
     public static Registrate create(String modid) {
-        return new Registrate(modid).registerEventListeners(FMLJavaModLoadingContext.get().getModEventBus());
+        return new Registrate(modid);
     }
 
     protected Registrate(String modid) {
