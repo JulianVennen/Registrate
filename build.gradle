@@ -26,13 +26,11 @@ dependencies {
 
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    include(modImplementation(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
 
     modImplementation(include("me.alphamode:ForgeTags:1.0"))
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
-
-    // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
-    // You may need to force-disable transitiveness on them.
 }
 
 loom {
