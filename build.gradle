@@ -18,6 +18,7 @@ repositories {
 
 dependencies {
     implementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
+    implementation 'org.jetbrains:annotations:20.1.0'
 
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -34,40 +35,8 @@ dependencies {
 }
 
 loom {
-    runs {
-        datagen {
-            server()
+    accessWidenerPath = file("src/main/resources/registrate-fabric.accesswidener")
 
-            name "Data Generation"
-            vmArg "-Dfabric-api.datagen"
-            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
-
-            runDir "build/datagen"
-        }
-    }
-}
-assemble.dependsOn runDatagen
-
-loom {
-    accessWidenerPath = file("src/main/resources/registrate.accesswidener")
-}
-
-loom {
-    runs {
-        datagen {
-            server()
-
-            name "Data Generation"
-            vmArg "-Dfabric-api.datagen"
-            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
-
-            runDir "build/datagen"
-        }
-    }
-}
-assemble.dependsOn runDatagen
-
-loom {
     runs {
         datagen {
             server()
