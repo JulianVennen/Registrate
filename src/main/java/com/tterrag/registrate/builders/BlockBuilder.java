@@ -13,10 +13,7 @@ import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
 import com.tterrag.registrate.fabric.EnvExecutor;
 import com.tterrag.registrate.fabric.RegistryObject;
-import com.tterrag.registrate.providers.DataGenContext;
-import com.tterrag.registrate.providers.ProviderType;
-import com.tterrag.registrate.providers.RegistrateLangProvider;
-import com.tterrag.registrate.providers.RegistrateRecipeProvider;
+import com.tterrag.registrate.providers.*;
 import com.tterrag.registrate.providers.loot.RegistrateBlockLootTables;
 import com.tterrag.registrate.providers.loot.RegistrateLootTableProvider.LootType;
 import com.tterrag.registrate.util.entry.BlockEntry;
@@ -29,11 +26,11 @@ import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
+import net.minecraftforge.client.model.generators.BlockStateProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.color.block.BlockColor;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.tags.Tag;
 import net.minecraft.world.item.BlockItem;
@@ -236,11 +233,11 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     public <I extends BlockItem> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
         return getOwner().<I, BlockBuilder<T, P>> item(this, getName(), p -> factory.apply(getEntry(), p))
                 .setData(ProviderType.LANG, NonNullBiConsumer.noop()) // FIXME Need a beetter API for "unsetting" providers
-                /*.model((ctx, prov) -> {
+                .model((ctx, prov) -> {
                     Optional<String> model = getOwner().getDataProvider(ProviderType.BLOCKSTATE)
                             .flatMap(p -> p.getExistingVariantBuilder(getEntry()))
                             .map(b -> b.getModels().get(b.partialState()))
-                            .map(ConfiguredModelList::toJSON)
+                            .map(BlockStateProvider.ConfiguredModelList::toJSON)
                             .filter(JsonElement::isJsonObject)
                             .map(j -> j.getAsJsonObject().get("model"))
                             .map(JsonElement::getAsString);
@@ -249,7 +246,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
                     } else {
                         prov.blockItem(asSupplier());
                     }
-                })*/;
+                });
     }
 
     /**
@@ -302,27 +299,27 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
         });
     }
 
-//    /**
-//     * Assign the default blockstate, which maps all states to a single model file (via {@link RegistrateBlockstateProvider#simpleBlock(Block)}). This is the default, so it is generally not necessary
-//     * to call, unless for undoing previous changes.
-//     *
-//     * @return this {@link BlockBuilder}
-//     */
-//    public BlockBuilder<T, P> defaultBlockstate() {
-//        return blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry()));
-//    }
+    /**
+     * Assign the default blockstate, which maps all states to a single model file (via {@link RegistrateBlockstateProvider#simpleBlock(Block)}). This is the default, so it is generally not necessary
+     * to call, unless for undoing previous changes.
+     *
+     * @return this {@link BlockBuilder}
+     */
+    public BlockBuilder<T, P> defaultBlockstate() {
+        return blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry()));
+    }
 
-//    /**
-//     * Configure the blockstate/models for this block.
-//     *
-//     * @param cons
-//     *            The callback which will be invoked during data generation.
-//     * @return this {@link BlockBuilder}
-//     * @see #setData(ProviderType, NonNullBiConsumer)
-//     */
-//    public BlockBuilder<T, P> blockstate(NonNullBiConsumer<DataGenContext<Block, T>, RegistrateBlockstateProvider> cons) {
-//        return setData(ProviderType.BLOCKSTATE, cons);
-//    }
+    /**
+     * Configure the blockstate/models for this block.
+     *
+     * @param cons
+     *            The callback which will be invoked during data generation.
+     * @return this {@link BlockBuilder}
+     * @see #setData(ProviderType, NonNullBiConsumer)
+     */
+    public BlockBuilder<T, P> blockstate(NonNullBiConsumer<DataGenContext<Block, T>, RegistrateBlockstateProvider> cons) {
+        return setData(ProviderType.BLOCKSTATE, cons);
+    }
 
     /**
      * Assign the default translation, as specified by {@link RegistrateLangProvider#getAutomaticName(NonNullSupplier)}. This is the default, so it is generally not necessary to call, unless for undoing

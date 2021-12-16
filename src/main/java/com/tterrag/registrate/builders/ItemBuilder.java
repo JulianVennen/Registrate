@@ -5,10 +5,7 @@ import java.util.function.Supplier;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.fabric.EnvExecutor;
 import com.tterrag.registrate.fabric.RegistryObject;
-import com.tterrag.registrate.providers.DataGenContext;
-import com.tterrag.registrate.providers.ProviderType;
-import com.tterrag.registrate.providers.RegistrateLangProvider;
-import com.tterrag.registrate.providers.RegistrateRecipeProvider;
+import com.tterrag.registrate.providers.*;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
@@ -95,7 +92,7 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
      */
     public static <T extends Item, P> ItemBuilder<T, P> create(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<Item.Properties, T> factory, @Nullable NonNullSupplier<? extends CreativeModeTab> tab) {
         return new ItemBuilder<>(owner, parent, name, callback, factory)
-                /*.defaultModel()*/.defaultLang()
+                .defaultModel().defaultLang()
                 .transform(ib -> tab == null ? ib : ib.tab(tab));
     }
 
@@ -164,26 +161,26 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
         });
     }
     
-//    /**
-//     * Assign the default model to this item, which is simply a generated model with a single texture of the same name.
-//     *
-//     * @return this {@link ItemBuilder}
-//     */
-//    public ItemBuilder<T, P> defaultModel() {
-//        return model((ctx, prov) -> prov.generated(ctx::getEntry));
-//    }
+    /**
+     * Assign the default model to this item, which is simply a generated model with a single texture of the same name.
+     *
+     * @return this {@link ItemBuilder}
+     */
+    public ItemBuilder<T, P> defaultModel() {
+        return model((ctx, prov) -> prov.generated(ctx::getEntry));
+    }
 
-//    /**
-//     * Configure the model for this item.
-//     *
-//     * @param cons
-//     *            The callback which will be invoked during data creation
-//     * @return this {@link ItemBuilder}
-//     * @see #setData(ProviderType, NonNullBiConsumer)
-//     */
-//    public ItemBuilder<T, P> model(NonNullBiConsumer<DataGenContext<Item, T>, RegistrateItemModelProvider> cons) {
-//        return setData(ProviderType.ITEM_MODEL, cons);
-//    }
+    /**
+     * Configure the model for this item.
+     *
+     * @param cons
+     *            The callback which will be invoked during data creation
+     * @return this {@link ItemBuilder}
+     * @see #setData(ProviderType, NonNullBiConsumer)
+     */
+    public ItemBuilder<T, P> model(NonNullBiConsumer<DataGenContext<Item, T>, RegistrateItemModelProvider> cons) {
+        return setData(ProviderType.ITEM_MODEL, cons);
+    }
     
     /**
      * Assign the default translation, as specified by {@link RegistrateLangProvider#getAutomaticName(NonNullSupplier)}. This is the default, so it is generally not necessary to call, unless for undoing

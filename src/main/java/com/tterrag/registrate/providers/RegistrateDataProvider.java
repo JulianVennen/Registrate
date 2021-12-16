@@ -20,6 +20,7 @@ import net.minecraft.data.HashCache;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
 
 @Log4j2
@@ -35,7 +36,9 @@ public class RegistrateDataProvider implements DataProvider {
     private final String mod;
     private final Map<ProviderType<?>, RegistrateProvider> subProviders = new LinkedHashMap<>();
 
-    public RegistrateDataProvider(AbstractRegistrate<?> parent, String modid, FabricDataGenerator generator) {
+    record DataInfo(FabricDataGenerator generator, ExistingFileHelper helper) {}
+
+    public RegistrateDataProvider(AbstractRegistrate<?> parent, String modid, FabricDataGenerator generator, ExistingFileHelper helper) {
         this.mod = modid;
         EnumSet<EnvType> sides = EnumSet.noneOf(EnvType.class);
 //        if (event.includeServer()) {
@@ -49,7 +52,7 @@ public class RegistrateDataProvider implements DataProvider {
         Map<ProviderType<?>, RegistrateProvider> known = new HashMap<>();
         for (String id : TYPES.keySet()) {
             ProviderType<?> type = TYPES.get(id);
-            RegistrateProvider prov = type.create(parent, generator, known);
+            RegistrateProvider prov = type.create(parent, new DataInfo(generator, helper), known);
             known.put(type, prov);
             if (sides.contains(prov.getSide())) {
                 log.debug(DebugMarkers.DATA, "Adding provider for type: {}", id);

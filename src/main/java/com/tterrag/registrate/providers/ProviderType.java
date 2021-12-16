@@ -34,20 +34,20 @@ import org.jetbrains.annotations.NotNull;
 public interface ProviderType<T extends RegistrateProvider> {
 
     // SERVER DATA
-    public static final ProviderType<RegistrateRecipeProvider> RECIPE = register("recipe", RegistrateRecipeProvider::new);
-    public static final ProviderType<RegistrateAdvancementProvider> ADVANCEMENT = register("advancement", RegistrateAdvancementProvider::new);
-    public static final ProviderType<RegistrateLootTableProvider> LOOT = register("loot", RegistrateLootTableProvider::new);
-    public static final ProviderType<RegistrateTagsProvider<Block>> BLOCK_TAGS = register("tags/block", type -> (p, g) -> new RegistrateTagsProvider<Block>(p, type, "blocks", g, Registry.BLOCK));
-    public static final ProviderType<RegistrateItemTagsProvider> ITEM_TAGS = registerDelegate("tags/item", type -> (p, g, existing) -> new RegistrateItemTagsProvider(p, type, "items", g, (RegistrateTagsProvider<Block>)existing.get(BLOCK_TAGS)));
-    public static final ProviderType<RegistrateTagsProvider<Fluid>> FLUID_TAGS = register("tags/fluid", type -> (p, g) -> new RegistrateTagsProvider<Fluid>(p, type, "fluids", g, Registry.FLUID));
-    public static final ProviderType<RegistrateTagsProvider<EntityType<?>>> ENTITY_TAGS = register("tags/entity", type -> (p, g) -> new RegistrateTagsProvider<EntityType<?>>(p, type, "entity_types", g, Registry.ENTITY_TYPE));
+    public static final ProviderType<RegistrateRecipeProvider> RECIPE = register("recipe", (p, i) -> new RegistrateRecipeProvider(p, i.generator()));
+    public static final ProviderType<RegistrateAdvancementProvider> ADVANCEMENT = register("advancement", (p, i) -> new RegistrateAdvancementProvider(p, i.generator()));
+    public static final ProviderType<RegistrateLootTableProvider> LOOT = register("loot", ((p, i) -> new RegistrateLootTableProvider(p, i.generator())));
+    public static final ProviderType<RegistrateTagsProvider<Block>> BLOCK_TAGS = register("tags/block", type -> (p, g) -> new RegistrateTagsProvider<Block>(p, type, "blocks", g.generator(), Registry.BLOCK));
+    public static final ProviderType<RegistrateItemTagsProvider> ITEM_TAGS = registerDelegate("tags/item", type -> (p, g, existing) -> new RegistrateItemTagsProvider(p, type, "items", g.generator(), (RegistrateTagsProvider<Block>)existing.get(BLOCK_TAGS)));
+    public static final ProviderType<RegistrateTagsProvider<Fluid>> FLUID_TAGS = register("tags/fluid", type -> (p, g) -> new RegistrateTagsProvider<Fluid>(p, type, "fluids", g.generator(), Registry.FLUID));
+    public static final ProviderType<RegistrateTagsProvider<EntityType<?>>> ENTITY_TAGS = register("tags/entity", type -> (p, g) -> new RegistrateTagsProvider<EntityType<?>>(p, type, "entity_types", g.generator(), Registry.ENTITY_TYPE));
 
     // CLIENT DATA
-//    public static final ProviderType<RegistrateBlockstateProvider> BLOCKSTATE = register("blockstate", (p, g) -> new RegistrateBlockstateProvider(p, g, e.getExistingFileHelper()));
-//    public static final ProviderType<RegistrateItemModelProvider> ITEM_MODEL = register("item_model", (p, g, existing) -> new RegistrateItemModelProvider(p, g, ((RegistrateBlockstateProvider)existing.get(BLOCKSTATE)).getExistingFileHelper()));
-    public static final ProviderType<RegistrateLangProvider> LANG = register("lang", (p, g) -> new RegistrateLangProvider(p, g));
+    public static final ProviderType<RegistrateBlockstateProvider> BLOCKSTATE = register("blockstate", (p, i) -> new RegistrateBlockstateProvider(p, i.generator(), i.helper()));
+    public static final ProviderType<RegistrateItemModelProvider> ITEM_MODEL = register("item_model", (p, i, existing) -> new RegistrateItemModelProvider(p, i.generator(), ((RegistrateBlockstateProvider)existing.get(BLOCKSTATE)).getExistingFileHelper()));
+    public static final ProviderType<RegistrateLangProvider> LANG = register("lang", (p, i) -> new RegistrateLangProvider(p, i.generator()));
 
-    T create(AbstractRegistrate<?> parent, FabricDataGenerator generator, Map<ProviderType<?>, RegistrateProvider> existing);
+    T create(AbstractRegistrate<?> parent, RegistrateDataProvider.DataInfo info, Map<ProviderType<?>, RegistrateProvider> existing);
 
     // TODO this is clunky af
     @NotNull
@@ -55,32 +55,32 @@ public interface ProviderType<T extends RegistrateProvider> {
         ProviderType<T> ret = new ProviderType<T>() {
 
             @Override
-            public T create(@NotNull AbstractRegistrate<?> parent, FabricDataGenerator generator, Map<ProviderType<?>, RegistrateProvider> existing) {
-                return type.apply(this).create(parent, generator, existing);
+            public T create(@NotNull AbstractRegistrate<?> parent, RegistrateDataProvider.DataInfo info, Map<ProviderType<?>, RegistrateProvider> existing) {
+                return type.apply(this).create(parent, info, existing);
             }
         };
         return register(name, ret);
     }
 
     @NotNull
-    static <T extends RegistrateProvider> ProviderType<T> register(String name, NonNullFunction<ProviderType<T>, NonNullBiFunction<AbstractRegistrate<?>, FabricDataGenerator, T>> type) {
+    static <T extends RegistrateProvider> ProviderType<T> register(String name, NonNullFunction<ProviderType<T>, NonNullBiFunction<AbstractRegistrate<?>, RegistrateDataProvider.DataInfo, T>> type) {
         ProviderType<T> ret = new ProviderType<T>() {
             
             @Override
-            public T create(@NotNull AbstractRegistrate<?> parent, FabricDataGenerator generator, Map<ProviderType<?>, RegistrateProvider> existing) {
-                return type.apply(this).apply(parent, generator);
+            public T create(@NotNull AbstractRegistrate<?> parent, RegistrateDataProvider.DataInfo info, Map<ProviderType<?>, RegistrateProvider> existing) {
+                return type.apply(this).apply(parent, info);
             }
         };
         return register(name, ret);
     }
     
     @NotNull
-    static <T extends RegistrateProvider> ProviderType<T> register(String name, NonNullBiFunction<AbstractRegistrate<?>, FabricDataGenerator, T> type) {
+    static <T extends RegistrateProvider> ProviderType<T> register(String name, NonNullBiFunction<AbstractRegistrate<?>, RegistrateDataProvider.DataInfo, T> type) {
         ProviderType<T> ret = new ProviderType<T>() {
             
             @Override
-            public T create(AbstractRegistrate<?> parent, FabricDataGenerator generator, Map<ProviderType<?>, RegistrateProvider> existing) {
-                return type.apply(parent, generator);
+            public T create(AbstractRegistrate<?> parent, RegistrateDataProvider.DataInfo info, Map<ProviderType<?>, RegistrateProvider> existing) {
+                return type.apply(parent, info);
             }
         };
         return register(name, ret);

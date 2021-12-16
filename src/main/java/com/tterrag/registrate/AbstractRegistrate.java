@@ -1,20 +1,14 @@
 package com.tterrag.registrate;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import com.tterrag.registrate.fabric.GatherDataEvent;
 import com.tterrag.registrate.fabric.RegistryObject;
 import com.tterrag.registrate.fabric.RegistryUtil;
 import com.tterrag.registrate.fabric.SimpleFlowableFluid;
@@ -22,13 +16,13 @@ import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.fabric.impl.datagen.FabricDataGenHelper;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.Message;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
@@ -84,7 +78,6 @@ import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Material;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,7 +105,7 @@ import org.jetbrains.annotations.Nullable;
  * For specifics as to building different registry entries, read the documentation on their respective builders.
  */
 @Log4j2
-public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> implements DataGeneratorEntrypoint {
+public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     
     @Value
     private class Registration<R, T extends R> {
@@ -129,6 +122,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> implem
             this.type = type;
             this.creator =  new NonNullLazyValue<>(creator);
             this.delegate = entryFactory.apply(RegistryObject.of(name, (Class<R>) type/*, AbstractRegistrate.this.getModid()*/));
+            GatherDataEvent.EVENT.register(AbstractRegistrate.this::onInitializeDataGenerator);
         }
         
         void register(Registry<R> registry) {
@@ -282,9 +276,8 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> implem
     @Nullable
     private RegistrateDataProvider provider;
 
-    @Override
-    public void onInitializeDataGenerator(FabricDataGenerator generator) {
-        generator.addProvider(provider = new RegistrateDataProvider(this, modid, generator));
+    public void onInitializeDataGenerator(FabricDataGenerator generator, ExistingFileHelper existingFileHelper) {
+        generator.addProvider(provider = new RegistrateDataProvider(this, modid, generator, existingFileHelper));
     }
 
     /**

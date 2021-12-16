@@ -64,36 +64,6 @@ loom {
     accessWidenerPath = file("src/main/resources/registrate.accesswidener")
 }
 
-loom {
-    runs {
-        datagen {
-            server()
-
-            name "Data Generation"
-            vmArg "-Dfabric-api.datagen"
-            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
-
-            runDir "build/datagen"
-        }
-    }
-}
-assemble.dependsOn runDatagen
-
-loom {
-    runs {
-        datagen {
-            server()
-
-            name "Data Generation"
-            vmArg "-Dfabric-api.datagen"
-            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
-
-            runDir "build/datagen"
-        }
-    }
-}
-assemble.dependsOn runDatagen
-
 lombok {
     version = "1.18.20"
     config['lombok.addJavaxGeneratedAnnotation'] = 'true'
@@ -135,7 +105,7 @@ tasks.withType(JavaCompile).configureEach {
     // The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
     // JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
     // We'll use that if it's available, but otherwise we'll use the older option.
-    def targetVersion = 16
+    def targetVersion = 17
     if (JavaVersion.current().isJava9Compatible()) {
         it.options.release = targetVersion
     }
