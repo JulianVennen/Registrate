@@ -12,22 +12,13 @@ group = "com.tterrag.registrate"
 archivesBaseName = "Registrate"
 
 repositories {
-    maven {
-        url 'https://repo.maven.apache.org/maven2'
-        name 'Maven Central'
-    }
-
-    mavenLocal()
-
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+    maven { url = 'https://repo.maven.apache.org/maven2' }
+    maven { url = 'https://maven.devos.community/releases' }
 }
 
 dependencies {
     implementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
+    implementation 'org.jetbrains:annotations:20.1.0'
 
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -36,16 +27,16 @@ dependencies {
 
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    include(modImplementation(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
 
-    modImplementation(include("me.alphamode:ForgeTags:1.0"))
+    modImplementation(include("me.alphamode:ForgeTags:1.1"))
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
-
-    // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
-    // You may need to force-disable transitiveness on them.
 }
 
 loom {
+    accessWidenerPath = file("src/main/resources/registrate-fabric.accesswidener")
+
     runs {
         datagen {
             server()
@@ -59,10 +50,6 @@ loom {
     }
 }
 assemble.dependsOn runDatagen
-
-loom {
-    accessWidenerPath = file("src/main/resources/registrate.accesswidener")
-}
 
 lombok {
     version = "1.18.20"
@@ -124,25 +111,26 @@ jar {
     }
 }
 
-// configure the maven publication
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            // add all the jars that should be included when publishing to maven
-            artifact(remapJar) {
-                builtBy remapJar
-            }
-            artifact(sourcesJar) {
-                builtBy remapSourcesJar
-            }
+            from components.java
         }
     }
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
+        String suffix = System.getenv().PUBLISH_SUFFIX // 'releases' or 'snapshots'
+        if (suffix == null || suffix.isEmpty()) {
+            System.out.println("Failed to publish to maven! publishSuffix is not set.")
+            return
+        }
+        maven {
+            url = "https://maven.devos.community/${suffix}/"
+            credentials {
+                username = System.getenv().MAVEN_USER
+                password = System.getenv().MAVEN_PASS
+            }
+            authentication { basic(BasicAuthentication) }
+        }
     }
 }

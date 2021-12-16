@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "registrate",
+  "id": "registrate-fabric",
   "version": "${version}",
   "name": "Registrate for Fabric",
   "description": "Fabric port of Registrate. Helper library to make creating and registering objects simpler.",
@@ -13,7 +13,7 @@
   },
 
   "license": "MPL-2.0",
-  "icon": "assets/registrate/icon.png",
+  "icon": "assets/registrate-fabric/icon.png",
 
   "environment": "*",
   "entrypoints": {
@@ -25,10 +25,10 @@
     ]
   },
   "mixins": [
-    "registrate.mixins.json"
+    "registrate-fabric.mixins.json"
   ],
 
-  "accessWidener": "registrate.accesswidener",
+  "accessWidener": "registrate-fabric.accesswidener",
 
   "depends": {
     "fabricloader": ">=0.12.10",
