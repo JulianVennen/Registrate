@@ -84,7 +84,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      */
     public static <T extends Block, P> BlockBuilder<T, P> create(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<BlockBehaviour.Properties, T> factory, Material material) {
         return new BlockBuilder<>(owner, parent, name, callback, factory, () -> BlockBehaviour.Properties.of(material))
-                /*.defaultBlockstate()*/.defaultLoot().defaultLang();
+                .defaultBlockstate().defaultLoot().defaultLang();
     }
 
     private final NonNullFunction<BlockBehaviour.Properties, T> factory;
