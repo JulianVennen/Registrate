@@ -507,6 +507,9 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         } else {
             throw new IllegalStateException("Fluid must have a source version: " + getName());
         }
+        if (renderHandler == null) {
+            this.setDefaultRenderHandler();
+        }
         onRegister(this::registerRenderHandler);
         return (FluidEntry<T>) super.register();
     }
