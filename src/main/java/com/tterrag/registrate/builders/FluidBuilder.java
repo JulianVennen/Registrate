@@ -401,8 +401,8 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             throw new IllegalStateException("Cannot create a bucket before creating a source block");
         }
         return getOwner().<I, FluidBuilder<T, P>>item(this, bucketName, p -> ((NonNullBiFunction<SimpleFlowableFluid, Item.Properties, ? extends I>) factory).apply(this.source.get(), p)) // Fabric TODO
-                .properties(p -> (FabricItemSettings) p.craftRemainder(Items.BUCKET).stacksTo(1))
-                /*.model((ctx, prov) -> prov.generated(ctx::getEntry, new ResourceLocation(getOwner().getModid(), "item/" + bucketName)))*/;
+                .properties(p -> p.craftRemainder(Items.BUCKET).stacksTo(1))
+                .model((ctx, prov) -> prov.generated(ctx::getEntry, new ResourceLocation(getOwner().getModid(), "item/" + bucketName)));
     }
 
     @Beta
