@@ -6,16 +6,19 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+import com.tterrag.registrate.fabric.*;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
+import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.tterrag.registrate.AbstractRegistrate;
-import com.tterrag.registrate.fabric.FluidBlockHelper;
-import com.tterrag.registrate.fabric.FluidData;
-import com.tterrag.registrate.fabric.RegistryObject;
-import com.tterrag.registrate.fabric.SimpleFlowableFluid;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
@@ -29,6 +32,8 @@ import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
 import net.minecraft.Util;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.Tag;
@@ -186,6 +191,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     private final ResourceLocation stillTexture;
+    private final ResourceLocation flowingTexture;
     private final String sourceName;
     private final String bucketName;
     private final NonNullSupplier<FluidData.Builder> attributes;
@@ -204,6 +210,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             /*@Nullable BiFunction<FluidAttributes.Builder, Fluid, FluidAttributes> attributesFactory,*/ NonNullFunction<SimpleFlowableFluid.Properties, T> factory) {
         super(owner, parent, "flowing_" + name, callback, Fluid.class);
         this.stillTexture = stillTexture;
+        this.flowingTexture = flowingTexture;
         this.sourceName = name;
         this.bucketName = name + "_bucket";
         this.attributes = FluidData.Builder::new;
@@ -332,14 +339,14 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         this.defaultBlock = false;
         NonNullSupplier<T> supplier = asSupplier();
         return getOwner().<B, FluidBuilder<T, P>>block(this, sourceName, p -> factory.apply(supplier, p))
-                .properties(p -> BlockBehaviour.Properties.copy(Blocks.WATER).noDrops());
+                .properties(p -> BlockBehaviour.Properties.copy(Blocks.WATER).noDrops())
 //                .properties(p -> {
 //                    // TODO is this ok?
 //                    FluidAttributes attrs = this.attributes.get().build(Fluids.WATER);
 //                    return p.lightLevel($ -> attrs.getLuminosity());
 //                })
-//                .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), prov.models().getBuilder(sourceName)
-//                                .texture("particle", stillTexture)));
+                .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), prov.models().getBuilder(sourceName)
+                                .texture("particle", stillTexture)));
     }
 
     // Fabric TODO
@@ -500,11 +507,76 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         } else {
             throw new IllegalStateException("Fluid must have a source version: " + getName());
         }
+        onRegister(this::registerRenderHandler);
         return (FluidEntry<T>) super.register();
     }
 
     @Override
     protected RegistryEntry<T> createEntryWrapper(RegistryObject<T> delegate) {
         return new FluidEntry<>(getOwner(), delegate);
+    }
+
+    // New - Fabric only
+
+    private Supplier<Supplier<RenderType>> renderLayer;
+    private Supplier<RenderHandlerFactory> renderHandler;
+    private int color = -1;
+
+    public FluidBuilder<T, P> layer(Supplier<Supplier<RenderType>> layer) {
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
+            Preconditions.checkArgument(RenderType.chunkBufferLayers().contains(layer.get().get()), "Invalid block layer: " + layer);
+        });
+        if (this.renderLayer == null) {
+            onRegister(this::registerLayer);
+        }
+        this.renderLayer = layer;
+        return this;
+    }
+
+    protected void registerLayer(T entry) {
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
+            final RenderType layer = renderLayer.get().get();
+            BlockRenderLayerMap.INSTANCE.putFluid(entry, layer);
+        });
+    }
+
+    public FluidBuilder<T, P> renderHandler(Supplier<RenderHandlerFactory> handler) {
+        if (this.color != -1) {
+            throw new IllegalArgumentException("Can only set either color or render handler factory!");
+        }
+        this.renderHandler = handler;
+        return this;
+    }
+
+    public FluidBuilder<T, P> color(int color) {
+        if (this.renderHandler != null) {
+            throw new IllegalArgumentException("Can only set either color or render handler factory!");
+        }
+        this.color = color;
+        return this;
+    }
+
+    @SuppressWarnings("deprecation")
+    protected void registerRenderHandler(T entry) {
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
+            final FluidRenderHandler handler = renderHandler.get().create(stillTexture, flowingTexture);
+            FluidRenderHandlerRegistry.INSTANCE.register(entry, handler);
+            FluidRenderHandlerRegistry.INSTANCE.register(entry.getSource(), handler);
+            ClientSpriteRegistryCallback.event(TextureAtlas.LOCATION_BLOCKS).register((atlasTexture, registry) -> {
+                registry.register(stillTexture);
+                registry.register(flowingTexture);
+            });
+        });
+    }
+
+    protected void setDefaultRenderHandler() {
+        this.renderHandler = () -> (stillTexture, flowingTexture) -> {
+            final SimpleFluidRenderHandler handler = new SimpleFluidRenderHandler(stillTexture, flowingTexture, flowingTexture, color);
+            return handler;
+        };
+    }
+
+    public interface RenderHandlerFactory {
+        FluidRenderHandler create(ResourceLocation stillTexture, ResourceLocation flowingTexture);
     }
 }
