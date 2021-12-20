@@ -136,21 +136,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
      * @return this {@link Builder}
      */
     public S lang(NonNullFunction<T, String> langKeyProvider) {
-        return lang(langKeyProvider, (p, t) -> {
-            if(t instanceof Block block)
-                return p.toEnglishName(Registry.BLOCK.getKey(block).getPath());
-            if(t instanceof Item item)
-                return  p.toEnglishName(Registry.ITEM.getKey(item).getPath());
-            if(t instanceof Enchantment enchantment)
-                return  p.toEnglishName(Registry.ENCHANTMENT.getKey(enchantment).getPath());
-            if(t instanceof EntityType entityType)
-                return  p.toEnglishName(Registry.ENTITY_TYPE.getKey(entityType).getPath());
-            if(t instanceof BlockEntityType blockEntityType)
-                return  p.toEnglishName(Registry.BLOCK_ENTITY_TYPE.getKey(blockEntityType).getPath());
-            if(t instanceof Fluid fluid)
-                return p.toEnglishName(Registry.FLUID.getKey(fluid).getPath());
-            return "";
-        });
+        return lang(langKeyProvider, (p, t) -> p.getAutomaticName(t));
     }
 
     /**

@@ -22,8 +22,11 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.Fluid;
 
 public class RegistrateLangProvider extends LanguageProvider implements RegistrateProvider {
     
@@ -73,64 +76,76 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
                 .collect(Collectors.joining(" "));
     }
     
-//    public String getAutomaticName(NonNullSupplier<? extends IForgeRegistryEntry<?>> sup) {
-//        return toEnglishName(sup.get().getRegistryName().getPath());
-//    }
-    
-    public void addBlock(NonNullSupplier<? extends Block> block) {
-        addBlock(block, Registry.BLOCK.getKey(block.get()).getPath());
+    public String getAutomaticName(NonNullSupplier<?> sup) {
+        if(sup.get() instanceof Block block)
+            return RegistrateLangProvider.toEnglishName(Registry.BLOCK.getKey(block).getPath());
+        if(sup.get() instanceof Item item)
+            return  RegistrateLangProvider.toEnglishName(Registry.ITEM.getKey(item).getPath());
+        if(sup.get() instanceof Enchantment enchantment)
+            return  RegistrateLangProvider.toEnglishName(Registry.ENCHANTMENT.getKey(enchantment).getPath());
+        if(sup.get() instanceof EntityType entityType)
+            return  RegistrateLangProvider.toEnglishName(Registry.ENTITY_TYPE.getKey(entityType).getPath());
+        if(sup.get() instanceof BlockEntityType blockEntityType)
+            return  RegistrateLangProvider.toEnglishName(Registry.BLOCK_ENTITY_TYPE.getKey(blockEntityType).getPath());
+        if(sup.get() instanceof Fluid fluid)
+            return RegistrateLangProvider.toEnglishName(Registry.FLUID.getKey(fluid).getPath());
+        return "Registry not found, or implemented.";
     }
-    
+
+    public void addBlock(NonNullSupplier<? extends Block> block) {
+        addBlock(block, getAutomaticName(block));
+    }
+
     public void addBlockWithTooltip(NonNullSupplier<? extends Block> block, String tooltip) {
         addBlock(block);
         addTooltip(block, tooltip);
     }
-    
+
     public void addBlockWithTooltip(NonNullSupplier<? extends Block> block, String name, String tooltip) {
         addBlock(block, name);
         addTooltip(block, tooltip);
     }
-    
+
     public void addItem(NonNullSupplier<? extends Item> item) {
-        addItem(item, Registry.ITEM.getKey(item.get()).getPath());
+        addItem(item, getAutomaticName(item));
     }
-    
+
     public void addItemWithTooltip(NonNullSupplier<? extends Item> block, String name, List<@NonnullType String> tooltip) {
         addItem(block, name);
         addTooltip(block, tooltip);
     }
-    
+
     public void addTooltip(NonNullSupplier<? extends ItemLike> item, String tooltip) {
         add(item.get().asItem().getDescriptionId() + ".desc", tooltip);
     }
-    
+
     public void addTooltip(NonNullSupplier<? extends ItemLike> item, List<@NonnullType String> tooltip) {
         for (int i = 0; i < tooltip.size(); i++) {
             add(item.get().asItem().getDescriptionId() + ".desc." + i, tooltip.get(i));
         }
     }
-    
+
     public void add(CreativeModeTab tab, String name) {
         add(((TranslatableComponent)tab.getDisplayName()).getKey(), name);
     }
-    
+
     public void addEntityType(NonNullSupplier<? extends EntityType<?>> entity) {
-        addEntityType(entity, Registry.ENTITY_TYPE.getKey(entity.get()).getPath());
+        addEntityType(entity, getAutomaticName(entity));
     }
-    
+
     // Automatic en_ud generation
 
-    private static final String NORMAL_CHARS = 
+    private static final String NORMAL_CHARS =
             /* lowercase */ "abcdefghijklmn\u00F1opqrstuvwxyz" +
             /* uppercase */ "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
             /*  numbers  */ "0123456789" +
             /*  special  */ "_,;.?!/\\'";
-    private static final String UPSIDE_DOWN_CHARS = 
+    private static final String UPSIDE_DOWN_CHARS =
             /* lowercase */ "\u0250q\u0254p\u01DD\u025Fb\u0265\u0131\u0638\u029E\u05DF\u026Fuuodb\u0279s\u0287n\u028C\u028Dx\u028Ez" +
             /* uppercase */ "\u2C6F\u15FA\u0186\u15E1\u018E\u2132\u2141HI\u017F\u029E\uA780WNO\u0500\u1F49\u1D1AS\u27D8\u2229\u039BMX\u028EZ" +
             /*  numbers  */ "0\u0196\u1105\u0190\u3123\u03DB9\u312586" +
             /*  special  */ "\u203E'\u061B\u02D9\u00BF\u00A1/\\,";
-    
+
     static {
         if (NORMAL_CHARS.length() != UPSIDE_DOWN_CHARS.length()) {
             throw new AssertionError("Char maps do not match in length!");
