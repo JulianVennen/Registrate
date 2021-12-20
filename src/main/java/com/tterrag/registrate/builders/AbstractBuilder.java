@@ -27,6 +27,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * Base class which most builders should extend, instead of implementing [@link {@link Builder} directly.
@@ -137,16 +138,18 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     public S lang(NonNullFunction<T, String> langKeyProvider) {
         return lang(langKeyProvider, (p, t) -> {
             if(t instanceof Block block)
-                return Registry.BLOCK.getKey(block).getPath();
+                return p.toEnglishName(Registry.BLOCK.getKey(block).getPath());
             if(t instanceof Item item)
-                return Registry.ITEM.getKey(item).getPath();
+                return  p.toEnglishName(Registry.ITEM.getKey(item).getPath());
             if(t instanceof Enchantment enchantment)
-                return Registry.ENCHANTMENT.getKey(enchantment).getPath();
+                return  p.toEnglishName(Registry.ENCHANTMENT.getKey(enchantment).getPath());
             if(t instanceof EntityType entityType)
-                return Registry.ENTITY_TYPE.getKey(entityType).getPath();
+                return  p.toEnglishName(Registry.ENTITY_TYPE.getKey(entityType).getPath());
             if(t instanceof BlockEntityType blockEntityType)
-                return Registry.BLOCK_ENTITY_TYPE.getKey(blockEntityType).getPath();
-            return null;
+                return  p.toEnglishName(Registry.BLOCK_ENTITY_TYPE.getKey(blockEntityType).getPath());
+            if(t instanceof Fluid fluid)
+                return p.toEnglishName(Registry.FLUID.getKey(fluid).getPath());
+            return "";
         });
     }
 

@@ -122,7 +122,6 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
             this.type = type;
             this.creator =  new NonNullLazyValue<>(creator);
             this.delegate = entryFactory.apply(RegistryObject.of(name, (Class<R>) type/*, AbstractRegistrate.this.getModid()*/));
-            GatherDataEvent.EVENT.register(AbstractRegistrate.this::onInitializeDataGenerator);
         }
         
         void register(Registry<R> registry) {
@@ -175,6 +174,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      */
     protected AbstractRegistrate(String modid) {
         this.modid = modid;
+        GatherDataEvent.EVENT.register(this::onInitializeDataGenerator);
     }
     
     @SuppressWarnings("unchecked")
