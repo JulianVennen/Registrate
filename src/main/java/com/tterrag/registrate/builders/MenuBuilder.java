@@ -66,6 +66,7 @@ public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & Men
             MenuFactory<T> factory = this.factory;
             ret = ScreenHandlerRegistry.registerSimple(null, (syncId, inventory) -> factory.create(supplier.get(), syncId, inventory));
         }
+        ScreenHandlerRegistryExtension.createOnly = false;
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
             ScreenFactory<T, S> screenFactory = this.screenFactory.get();
             ScreenRegistry.<T, S>register(ret, (type, inv, displayName) -> screenFactory.create(type, inv, displayName));
