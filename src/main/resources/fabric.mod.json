@@ -6,7 +6,9 @@
   "description": "Fabric port of Registrate. Helper library to make creating and registering objects simpler.",
   "authors": [
     "tterrag1098",
-	"Pepper_Bell"
+	"Pepper_Bell",
+    "AlphaMode",
+    "TropheusJ"
   ],
   "contact": {
     "sources": "https://github.com/PepperCode1/Registrate-Fabric"
