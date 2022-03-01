@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.minecraft.tags.TagKey;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.annotations.Beta;
@@ -37,7 +38,6 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.Tag;
-import net.minecraft.tags.Tag.Named;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -50,7 +50,7 @@ import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A builder for fluids, allows for customization of the {@link SimpleFlowableFluid.Properties} and {@link FluidAttributes}, and creation of the source variant, fluid block, and bucket item, as well as
+ * A builder for fluids, allows for customization of the {@link SimpleFlowableFluid.Properties} and {@link FluidData.FluidAttributes}, and creation of the source variant, fluid block, and bucket item, as well as
  * data associated with fluids (tags, etc.).
  * 
  * @param <T>
@@ -204,7 +204,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     private NonNullConsumer<SimpleFlowableFluid.Properties> properties;
     @Nullable
     private NonNullLazyValue<? extends SimpleFlowableFluid> source;
-    private List<Named<Fluid>> tags = new ArrayList<>();
+    private List<TagKey<Fluid>> tags = new ArrayList<>();
 
     protected FluidBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, ResourceLocation stillTexture, ResourceLocation flowingTexture,
             /*@Nullable BiFunction<FluidAttributes.Builder, Fluid, FluidAttributes> attributesFactory,*/ NonNullFunction<SimpleFlowableFluid.Properties, T> factory) {
@@ -398,7 +398,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
      *            A factory for the bucket item, which accepts the fluid object supplier and properties and returns a new item
      * @return the {@link ItemBuilder} for the {@link BucketItem}
      */
-    public <I extends BucketItem> ItemBuilder<I, FluidBuilder<T, P>> bucket(NonNullBiFunction<? extends SimpleFlowableFluid, Item.Properties, ? extends I> factory) {
+    public <I extends BucketItem> ItemBuilder<I, FluidBuilder<T, P>> bucket(NonNullBiFunction<? extends SimpleFlowableFluid, FabricItemSettings, ? extends I> factory) {
         if (this.defaultBucket == Boolean.FALSE) {
             throw new IllegalStateException("Only one call to bucket/noBucket per builder allowed");
         }
@@ -407,8 +407,8 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         if (source == null) {
             throw new IllegalStateException("Cannot create a bucket before creating a source block");
         }
-        return getOwner().<I, FluidBuilder<T, P>>item(this, bucketName, p -> ((NonNullBiFunction<SimpleFlowableFluid, Item.Properties, ? extends I>) factory).apply(this.source.get(), p)) // Fabric TODO
-                .properties(p -> p.craftRemainder(Items.BUCKET).stacksTo(1))
+        return getOwner().<I, FluidBuilder<T, P>>item(this, bucketName, p -> ((NonNullBiFunction<SimpleFlowableFluid, FabricItemSettings, ? extends I>) factory).apply(this.source.get(), p)) // Fabric TODO
+                .properties(p -> p.recipeRemainder(Items.BUCKET).maxCount(1))
                 .model((ctx, prov) -> prov.generated(ctx::getEntry, new ResourceLocation(getOwner().getModid(), "item/" + bucketName)));
     }
 
@@ -422,14 +422,14 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     /**
-     * Assign {@link Tag.Named}{@code s} to this fluid and its source fluid. Multiple calls will add additional tags.
+     * Assign {@link TagKey}{@code s} to this fluid and its source fluid. Multiple calls will add additional tags.
      * 
      * @param tags
      *            The tags to assign
      * @return this {@link FluidBuilder}
      */
     @SafeVarargs
-    public final FluidBuilder<T, P> tag(Tag.Named<Fluid>... tags) {
+    public final FluidBuilder<T, P> tag(TagKey<Fluid>... tags) {
         FluidBuilder<T, P> ret = this.tag(ProviderType.FLUID_TAGS, tags);
         if (this.tags.isEmpty()) {
             ret.getOwner().<RegistrateTagsProvider<Fluid>, Fluid> setDataGenerator(ret.sourceName, getRegistryType(), ProviderType.FLUID_TAGS,
@@ -440,14 +440,14 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     /**
-     * Remove {@link Tag.Named}{@code s} from this fluid and its source fluid. Multiple calls will remove additional tags.
+     * Remove {@link TagKey}{@code s} from this fluid and its source fluid. Multiple calls will remove additional tags.
      * 
      * @param tags
      *            The tags to remove
      * @return this {@link FluidBuilder}
      */
     @SafeVarargs
-    public final FluidBuilder<T, P> removeTag(Tag.Named<Fluid>... tags) {
+    public final FluidBuilder<T, P> removeTag(TagKey<Fluid>... tags) {
         this.tags.removeAll(Arrays.asList(tags));
         return this.removeTag(ProviderType.FLUID_TAGS, tags);
     }

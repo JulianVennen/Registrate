@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import com.tterrag.registrate.mixin.accessor.SpawnEggItemAccessor;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -39,7 +40,7 @@ public class LazySpawnEggItem<T extends Entity> extends SpawnEggItem {
 
     private final NonNullSupplier<EntityType<T>> typeIn;
 
-    public LazySpawnEggItem(final NonNullSupplier<EntityType<T>> type, int primaryColor, int secondaryColor, Properties properties) {
+    public LazySpawnEggItem(final NonNullSupplier<EntityType<T>> type, int primaryColor, int secondaryColor, FabricItemSettings properties) {
         super(null, primaryColor, secondaryColor, properties);
         this.typeIn = type;
     }

@@ -13,7 +13,7 @@ archivesBaseName = "Registrate"
 
 repositories {
     maven { url = 'https://repo.maven.apache.org/maven2' }
-    maven { url = 'https://maven.devos.community/releases' }
+    maven { url = 'https://maven.devos.community/snapshots' }
 }
 
 dependencies {
@@ -29,7 +29,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     include(modImplementation(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
 
-    modImplementation(include("me.alphamode:ForgeTags:1.1"))
+    modImplementation(include("me.alphamode:ForgeTags:2.1"))
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
 }

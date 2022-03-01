@@ -15,16 +15,16 @@ import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.minecraft.tags.TagKey;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.tags.Tag;
-import net.minecraft.tags.Tag.Named;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 
 /**
- * A builder for items, allows for customization of the {@link Item.Properties} and configuration of data associated with items (models, recipes, etc.).
+ * A builder for items, allows for customization of the {@link FabricItemSettings} and configuration of data associated with items (models, recipes, etc.).
  * 
  * @param <T>
  *            The type of item being built
@@ -58,7 +58,7 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
      *            Factory to create the item
      * @return A new {@link ItemBuilder} with reasonable default data generators.
      */
-    public static <T extends Item, P> ItemBuilder<T, P> create(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<Item.Properties, T> factory) {
+    public static <T extends Item, P> ItemBuilder<T, P> create(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<FabricItemSettings, T> factory) {
         return create(owner, parent, name, callback, factory, null);
     }
     
@@ -90,21 +90,21 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
      *            The {@link CreativeModeTab} for the object, can be null for none
      * @return A new {@link ItemBuilder} with reasonable default data generators.
      */
-    public static <T extends Item, P> ItemBuilder<T, P> create(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<Item.Properties, T> factory, @Nullable NonNullSupplier<? extends CreativeModeTab> tab) {
+    public static <T extends Item, P> ItemBuilder<T, P> create(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<FabricItemSettings, T> factory, @Nullable NonNullSupplier<? extends CreativeModeTab> tab) {
         return new ItemBuilder<>(owner, parent, name, callback, factory)
                 .defaultModel().defaultLang()
                 .transform(ib -> tab == null ? ib : ib.tab(tab));
     }
 
-    private final NonNullFunction<Item.Properties, T> factory;
+    private final NonNullFunction<FabricItemSettings, T> factory;
     
-    private NonNullSupplier<Item.Properties> initialProperties = FabricItemSettings::new;
-    private NonNullFunction<Item.Properties, Item.Properties> propertiesCallback = NonNullUnaryOperator.identity();
+    private NonNullSupplier<FabricItemSettings> initialProperties = FabricItemSettings::new;
+    private NonNullFunction<FabricItemSettings, FabricItemSettings> propertiesCallback = NonNullUnaryOperator.identity();
     
     @Nullable
     private NonNullSupplier<Supplier<ItemColor>> colorHandler;
     
-    protected ItemBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<Item.Properties, T> factory) {
+    protected ItemBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<FabricItemSettings, T> factory) {
         super(owner, parent, name, callback, Item.class);
         this.factory = factory;
     }
@@ -119,7 +119,7 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
      *            The action to perform on the properties
      * @return this {@link ItemBuilder}
      */
-    public ItemBuilder<T, P> properties(NonNullUnaryOperator<Item.Properties> func) {
+    public ItemBuilder<T, P> properties(NonNullUnaryOperator<FabricItemSettings> func) {
         propertiesCallback = propertiesCallback.andThen(func);
         return this;
     }
@@ -131,13 +131,13 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
      *            A supplier to to create the initial properties
      * @return this {@link ItemBuilder}
      */
-    public ItemBuilder<T, P> initialProperties(NonNullSupplier<Item.Properties> properties) {
+    public ItemBuilder<T, P> initialProperties(NonNullSupplier<FabricItemSettings> properties) {
         initialProperties = properties;
         return this;
     }
 
     public ItemBuilder<T, P> tab(NonNullSupplier<? extends CreativeModeTab> tab) {
-        return properties(p -> p.tab(tab.get()));
+        return properties(p -> p.group(tab.get()));
     }
     
     /**
@@ -216,20 +216,20 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
     }
     
     /**
-     * Assign {@link Tag.Named}{@code s} to this item. Multiple calls will add additional tags.
+     * Assign {@link TagKey}{@code s} to this item. Multiple calls will add additional tags.
      * 
      * @param tags
      *            The tag to assign
      * @return this {@link ItemBuilder}
      */
     @SafeVarargs
-    public final ItemBuilder<T, P> tag(Named<Item>... tags) {
+    public final ItemBuilder<T, P> tag(TagKey<Item>... tags) {
         return tag(ProviderType.ITEM_TAGS, tags);
     }
     
     @Override
     protected T createEntry() {
-        Item.Properties properties = this.initialProperties.get();
+        FabricItemSettings properties = this.initialProperties.get();
         properties = propertiesCallback.apply(properties);
         return factory.apply(properties);
     }

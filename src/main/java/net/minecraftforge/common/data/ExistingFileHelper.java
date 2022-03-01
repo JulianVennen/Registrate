@@ -22,13 +22,17 @@ package net.minecraftforge.common.data;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientPackSource;
 import net.minecraft.client.resources.AssetIndex;
 import net.minecraft.client.resources.DefaultClientPackResources;
@@ -37,15 +41,17 @@ import net.minecraft.data.HashCache;
 import net.minecraft.server.packs.FilePackResources;
 import net.minecraft.server.packs.FolderPackResources;
 import net.minecraft.server.packs.repository.ServerPacksSource;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.SimpleReloadableResourceManager;
 import net.minecraft.server.packs.VanillaPackResources;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.generators.ModelBuilder;
 import org.jetbrains.annotations.Nullable;
+
+import static net.minecraft.client.Minecraft.RESOURCE_RELOAD_INITIAL_TASK;
 
 /**
  * Enables data providers to check if other data files currently exist. The
@@ -85,7 +91,7 @@ public class ExistingFileHelper {
         public String getPrefix() { return prefix; }
     }
 
-    private final SimpleReloadableResourceManager clientResources, serverData;
+    private final ReloadableResourceManager clientResources, serverData;
     private final boolean enable;
     private final Multimap<PackType, ResourceLocation> generated = HashMultimap.create();
 
@@ -104,22 +110,25 @@ public class ExistingFileHelper {
      * @param assetsDir
      */
     public ExistingFileHelper(Collection<Path> existingPacks, final Set<String> existingMods, boolean enable, @Nullable final String assetIndex, @Nullable final File assetsDir) {
-        this.clientResources = new SimpleReloadableResourceManager(PackType.CLIENT_RESOURCES);
-        this.serverData = new SimpleReloadableResourceManager(PackType.SERVER_DATA);
-
-        this.clientResources.add(new VanillaPackResources(ClientPackSource.BUILT_IN, "minecraft", "realms"));
+        this.clientResources = new ReloadableResourceManager(PackType.CLIENT_RESOURCES);
+        this.serverData = new ReloadableResourceManager(PackType.SERVER_DATA);
+        List<PackResources> client = new ArrayList<>();
+        List<PackResources> server = new ArrayList<>();
+        client.add(new VanillaPackResources(ClientPackSource.BUILT_IN, "minecraft", "realms"));
         if (assetIndex != null && assetsDir != null)
         {
-            this.clientResources.add(new DefaultClientPackResources(ClientPackSource.BUILT_IN, new AssetIndex(assetsDir, assetIndex)));
+            client.add(new DefaultClientPackResources(ClientPackSource.BUILT_IN, new AssetIndex(assetsDir, assetIndex)));
         }
-        this.serverData.add(new VanillaPackResources(ServerPacksSource.BUILT_IN_METADATA, "minecraft"));
+        server.add(new VanillaPackResources(ServerPacksSource.BUILT_IN_METADATA, "minecraft"));
         for (Path existing : existingPacks) {
             File file = existing.toFile();
             PackResources pack = file.isDirectory() ? new FolderPackResources(file) : new FilePackResources(file);
-            this.clientResources.add(pack);
-            this.serverData.add(pack);
+            client.add(pack);
+            server.add(pack);
         }
         this.enable = enable;
+        clientResources.createReload(Util.backgroundExecutor(), Minecraft.getInstance(), RESOURCE_RELOAD_INITIAL_TASK, client);
+        serverData.createReload(Util.backgroundExecutor(), Minecraft.getInstance(), RESOURCE_RELOAD_INITIAL_TASK, server);
     }
 
     private ResourceManager getManager(PackType packType) {

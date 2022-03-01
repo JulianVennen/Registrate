@@ -1,7 +1,7 @@
 package com.tterrag.registrate.mixin.accessor;
 
 import com.google.gson.Gson;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;

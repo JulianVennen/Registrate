@@ -1,66 +1,33 @@
 package com.tterrag.registrate;
 
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-
+import com.google.common.annotations.Beta;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.*;
+import com.tterrag.registrate.builders.*;
+import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
+import com.tterrag.registrate.builders.EnchantmentBuilder.EnchantmentFactory;
+import com.tterrag.registrate.builders.MenuBuilder.ForgeMenuFactory;
+import com.tterrag.registrate.builders.MenuBuilder.MenuFactory;
+import com.tterrag.registrate.builders.MenuBuilder.ScreenFactory;
 import com.tterrag.registrate.fabric.GatherDataEvent;
 import com.tterrag.registrate.fabric.RegistryObject;
 import com.tterrag.registrate.fabric.RegistryUtil;
 import com.tterrag.registrate.fabric.SimpleFlowableFluid;
-import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
-import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
-import net.fabricmc.fabric.impl.datagen.FabricDataGenHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.message.Message;
-
-import com.google.common.annotations.Beta;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
-import com.tterrag.registrate.builders.BlockBuilder;
-import com.tterrag.registrate.builders.BlockEntityBuilder;
-import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
-import com.tterrag.registrate.builders.Builder;
-import com.tterrag.registrate.builders.BuilderCallback;
-import com.tterrag.registrate.builders.EnchantmentBuilder;
-import com.tterrag.registrate.builders.EnchantmentBuilder.EnchantmentFactory;
-import com.tterrag.registrate.builders.EntityBuilder;
-import com.tterrag.registrate.builders.FluidBuilder;
-import com.tterrag.registrate.builders.ItemBuilder;
-import com.tterrag.registrate.builders.MenuBuilder;
-import com.tterrag.registrate.builders.MenuBuilder.ForgeMenuFactory;
-import com.tterrag.registrate.builders.MenuBuilder.MenuFactory;
-import com.tterrag.registrate.builders.MenuBuilder.ScreenFactory;
-import com.tterrag.registrate.builders.NoConfigBuilder;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateDataProvider;
 import com.tterrag.registrate.providers.RegistrateProvider;
 import com.tterrag.registrate.util.DebugMarkers;
 import com.tterrag.registrate.util.NonNullLazyValue;
 import com.tterrag.registrate.util.entry.RegistryEntry;
-import com.tterrag.registrate.util.nullness.NonNullBiFunction;
-import com.tterrag.registrate.util.nullness.NonNullConsumer;
-import com.tterrag.registrate.util.nullness.NonNullFunction;
-import com.tterrag.registrate.util.nullness.NonNullSupplier;
-import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
-import com.tterrag.registrate.util.nullness.NonnullType;
-
+import com.tterrag.registrate.util.nullness.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Value;
 import lombok.extern.log4j.Log4j2;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.fabric.impl.datagen.FabricDataGenHelper;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Util;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
@@ -79,7 +46,18 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.message.Message;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * Manages all registrations and data generators for a mod.
@@ -813,19 +791,19 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     
     // Items
     
-    public <T extends Item> ItemBuilder<T, S> item(NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item> ItemBuilder<T, S> item(NonNullFunction<FabricItemSettings, T> factory) {
         return item(self(), factory);
     }
     
-    public <T extends Item> ItemBuilder<T, S> item(String name, NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item> ItemBuilder<T, S> item(String name, NonNullFunction<FabricItemSettings, T> factory) {
         return item(self(), name, factory);
     }
     
-    public <T extends Item, P> ItemBuilder<T, P> item(P parent, NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item, P> ItemBuilder<T, P> item(P parent, NonNullFunction<FabricItemSettings, T> factory) {
         return item(parent, currentName(), factory);
     }
     
-    public <T extends Item, P> ItemBuilder<T, P> item(P parent, String name, NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item, P> ItemBuilder<T, P> item(P parent, String name, NonNullFunction<FabricItemSettings, T> factory) {
         // TODO clean this up when NonNullLazyValue is fixed better
         NonNullLazyValue<? extends CreativeModeTab> currentTab = this.currentTab;
         return entry(name, callback -> ItemBuilder.create(this, parent, name, callback, factory, currentTab == null ? null : currentTab::get));

@@ -24,6 +24,7 @@ import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.data.recipes.SingleItemRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleCookingSerializer;
@@ -303,7 +304,7 @@ public class RegistrateRecipeProvider extends FabricRecipesProvider implements R
 
     public static InventoryChangeTrigger.TriggerInstance has(ItemLike p_125978_) { return RecipeProvider.has(p_125978_); }
 
-    public static InventoryChangeTrigger.TriggerInstance has(Tag<Item> p_125976_) { return RecipeProvider.has(p_125976_); }
+    public static InventoryChangeTrigger.TriggerInstance has(TagKey<Item> p_125976_) { return RecipeProvider.has(p_125976_); }
 
     public static InventoryChangeTrigger.TriggerInstance inventoryTrigger(ItemPredicate... p_126012_) { return RecipeProvider.inventoryTrigger(p_126012_); }
 

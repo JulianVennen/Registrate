@@ -26,6 +26,8 @@ import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.minecraft.tags.TagKey;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -230,7 +232,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      *            A factory for the item, which accepts the block object and properties and returns a new item
      * @return the {@link ItemBuilder} for the {@link BlockItem}
      */
-    public <I extends BlockItem> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
+    public <I extends BlockItem> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, FabricItemSettings, ? extends I> factory) {
         return getOwner().<I, BlockBuilder<T, P>> item(this, getName(), p -> factory.apply(getEntry(), p))
                 .setData(ProviderType.LANG, NonNullBiConsumer.noop()) // FIXME Need a beetter API for "unsetting" providers
                 .model((ctx, prov) -> {
@@ -383,14 +385,14 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     }
 
     /**
-     * Assign {@link Tag.Named}{@code s} to this block. Multiple calls will add additional tags.
+     * Assign {@link TagKey}{@code s} to this block. Multiple calls will add additional tags.
      * 
      * @param tags
      *            The tags to assign
      * @return this {@link BlockBuilder}
      */
     @SafeVarargs
-    public final BlockBuilder<T, P> tag(Tag.Named<Block>... tags) {
+    public final BlockBuilder<T, P> tag(TagKey<Block>... tags) {
         return tag(ProviderType.BLOCK_TAGS, tags);
     }
 

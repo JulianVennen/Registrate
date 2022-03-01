@@ -16,7 +16,7 @@ import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.Tag.Named;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -26,7 +26,7 @@ import net.minecraft.world.level.ItemLike;
  * A helper for data generation when using ingredients as input(s) to recipes.<br>
  * It remembers the name of the primary ingredient for use in creating recipe names/criteria.
  * <p>
- * Create an instance of this class with the various factory methods such as {@link #items(ItemLike, ItemLike...)} and {@link #tag(Tag.Named)}.
+ * Create an instance of this class with the various factory methods such as {@link #items(ItemLike, ItemLike...)} and {@link #tag(TagKey)}.
  * <p>
  * <strong>This class should not be used for any purpose other than data generation</strong>, it will throw an exception if it is serialized to a packet buffer.
  */
@@ -54,10 +54,10 @@ public final class DataIngredient extends Ingredient {
         this.criteriaFactory = prov -> RegistrateRecipeProvider.has(item);
     }
     
-    private DataIngredient(Ingredient parent, Named<Item> tag) {
+    private DataIngredient(Ingredient parent, TagKey<Item> tag) {
         super(Stream.empty());
         this.parent = parent;
-        this.id = tag.getName();
+        this.id = tag.location();
         this.criteriaFactory = prov -> RegistrateRecipeProvider.has(tag);
     }
     
@@ -92,7 +92,7 @@ public final class DataIngredient extends Ingredient {
         return ingredient(Ingredient.of(ObjectArrays.concat(first, others)), first.getItem());
     }
 
-    public static DataIngredient tag(Named<Item> tag) {
+    public static DataIngredient tag(TagKey<Item> tag) {
         return ingredient(Ingredient.of(tag), tag);
     }
     
@@ -100,7 +100,7 @@ public final class DataIngredient extends Ingredient {
         return new DataIngredient(parent, required);
     }
     
-    public static DataIngredient ingredient(Ingredient parent, Named<Item> required) {
+    public static DataIngredient ingredient(Ingredient parent, TagKey<Item> required) {
         return new DataIngredient(parent, required);
     }
     
