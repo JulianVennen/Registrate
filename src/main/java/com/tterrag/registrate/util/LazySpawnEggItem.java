@@ -1,14 +1,7 @@
 package com.tterrag.registrate.util;
 
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.Objects;
-
 import com.tterrag.registrate.mixin.accessor.SpawnEggItemAccessor;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
-import org.jetbrains.annotations.Nullable;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -21,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.context.UseOnContext;
@@ -35,12 +29,16 @@ import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.Objects;
 
 public class LazySpawnEggItem<T extends Entity> extends SpawnEggItem {
 
     private final NonNullSupplier<EntityType<T>> typeIn;
 
-    public LazySpawnEggItem(final NonNullSupplier<EntityType<T>> type, int primaryColor, int secondaryColor, FabricItemSettings properties) {
+    public LazySpawnEggItem(final NonNullSupplier<EntityType<T>> type, int primaryColor, int secondaryColor, Item.Properties properties) {
         super(null, primaryColor, secondaryColor, properties);
         this.typeIn = type;
     }

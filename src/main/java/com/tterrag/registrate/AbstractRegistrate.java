@@ -791,19 +791,19 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     
     // Items
     
-    public <T extends Item> ItemBuilder<T, S> item(NonNullFunction<FabricItemSettings, T> factory) {
+    public <T extends Item> ItemBuilder<T, S> item(NonNullFunction<Item.Properties, T> factory) {
         return item(self(), factory);
     }
     
-    public <T extends Item> ItemBuilder<T, S> item(String name, NonNullFunction<FabricItemSettings, T> factory) {
+    public <T extends Item> ItemBuilder<T, S> item(String name, NonNullFunction<Item.Properties, T> factory) {
         return item(self(), name, factory);
     }
     
-    public <T extends Item, P> ItemBuilder<T, P> item(P parent, NonNullFunction<FabricItemSettings, T> factory) {
+    public <T extends Item, P> ItemBuilder<T, P> item(P parent, NonNullFunction<Item.Properties, T> factory) {
         return item(parent, currentName(), factory);
     }
     
-    public <T extends Item, P> ItemBuilder<T, P> item(P parent, String name, NonNullFunction<FabricItemSettings, T> factory) {
+    public <T extends Item, P> ItemBuilder<T, P> item(P parent, String name, NonNullFunction<Item.Properties, T> factory) {
         // TODO clean this up when NonNullLazyValue is fixed better
         NonNullLazyValue<? extends CreativeModeTab> currentTab = this.currentTab;
         return entry(name, callback -> ItemBuilder.create(this, parent, name, callback, factory, currentTab == null ? null : currentTab::get));
