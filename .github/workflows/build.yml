@@ -1,5 +1,5 @@
-name: publish
-on: workflow_dispatch
+name: build
+on: [ pull_request, push ]
 
 jobs:
   build:
@@ -8,7 +8,7 @@ jobs:
         java: [ 17 ]
     runs-on: ubuntu-latest
     env:
-      PUBLISH_SUFFIX: releases
+      PUBLISH_SUFFIX: snapshots
       MAVEN_USER: ${{ secrets.MAVEN_USER }}
       MAVEN_PASS: ${{ secrets.MAVEN_PASS }}
     steps:
@@ -23,8 +23,8 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: publish
-        run: ./gradlew publish
+      - name: build
+        run: ./gradlew buildOrPublish
 
       - name: capture build artifacts
         uses: actions/upload-artifact@v2

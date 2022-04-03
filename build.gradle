@@ -1,5 +1,7 @@
+//file:noinspection GroovyAssignabilityCheck
+//file:noinspection GroovyAccessibility
 plugins {
-    id 'fabric-loom' version '0.10-SNAPSHOT'
+    id 'fabric-loom' version '0.11-SNAPSHOT'
     id "io.freefair.lombok" version "6.1.0-m3"
     id 'maven-publish'
 }
@@ -32,6 +34,18 @@ dependencies {
     modImplementation(include("me.alphamode:ForgeTags:2.1"))
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
+}
+
+task buildOrPublish {
+    group = "build"
+    String mavenUser = System.getenv().MAVEN_USER
+    if (mavenUser != null && !mavenUser.isEmpty()) {
+        dependsOn(tasks.getByName("publish"))
+        println "prepared for publish"
+    } else {
+        dependsOn(tasks.getByName("build"))
+        println "prepared for build"
+    }
 }
 
 loom {
@@ -83,19 +97,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
-    it.options.encoding = "UTF-8"
-
-    // The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
-    // JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
-    // We'll use that if it's available, but otherwise we'll use the older option.
-    def targetVersion = 17
-    if (JavaVersion.current().isJava9Compatible()) {
-        it.options.release = targetVersion
-    }
+    it.options.release = Integer.parseInt(sourceCompatibility)
 }
 
 java {
@@ -119,13 +121,8 @@ publishing {
     }
 
     repositories {
-        String suffix = System.getenv().PUBLISH_SUFFIX // 'releases' or 'snapshots'
-        if (suffix == null || suffix.isEmpty()) {
-            System.out.println("Failed to publish to maven! publishSuffix is not set.")
-            return
-        }
         maven {
-            url = "https://maven.devos.community/${suffix}/"
+            url = "https://mvn.devos.one/${System.getenv().PUBLISH_SUFFIX}/"
             credentials {
                 username = System.getenv().MAVEN_USER
                 password = System.getenv().MAVEN_PASS
