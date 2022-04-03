@@ -1,9 +1,9 @@
 package com.tterrag.registrate.util.nullness;
 
+import com.tterrag.registrate.fabric.Lazy;
+
 import java.util.Objects;
 import java.util.function.Supplier;
-
-import net.minecraftforge.common.util.Lazy;
 
 @FunctionalInterface
 public interface NonNullSupplier<@NonnullType T> extends Supplier<T> {
@@ -25,6 +25,6 @@ public interface NonNullSupplier<@NonnullType T> extends Supplier<T> {
     }
 
     static <T> NonNullSupplier<T> lazy(Supplier<@NonnullType T> sup) {
-        return Lazy.of(sup)::get;
+        return new Lazy<>(sup)::get;
     }
 }

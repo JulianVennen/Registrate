@@ -431,7 +431,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         FluidBuilder<T, P> ret = this.tag(ProviderType.FLUID_TAGS, tags);
         if (this.tags.isEmpty()) {
             ret.getOwner().<RegistrateTagsProvider<Fluid>, Fluid> setDataGenerator(ret.sourceName, getRegistryType(), ProviderType.FLUID_TAGS,
-                    prov -> this.tags.stream().map(tag -> prov.Tag(tag)).forEach(p -> p.add(getSource())));
+                    prov -> this.tags.stream().map(tag -> prov.tag(tag)).forEach(p -> p.add(getSource())));
         }
         this.tags.addAll(Arrays.asList(tags));
         return ret;

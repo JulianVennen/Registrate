@@ -13,7 +13,7 @@ archivesBaseName = "Registrate"
 
 repositories {
     maven { url = 'https://repo.maven.apache.org/maven2' }
-    maven { url = 'https://maven.devos.community/snapshots' }
+    maven { url = 'https://mvn.devos.one/snapshots' }
 }
 
 dependencies {
