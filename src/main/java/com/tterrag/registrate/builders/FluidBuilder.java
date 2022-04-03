@@ -22,7 +22,6 @@ import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
-import com.tterrag.registrate.util.NonNullLazyValue;
 import com.tterrag.registrate.util.entry.FluidEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
@@ -58,7 +57,7 @@ import org.jetbrains.annotations.Nullable;
  *            Parent object type
  */
 public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuilder<Fluid, T, P, FluidBuilder<T, P>> {
-    
+
 //    private static class Builder extends FluidAttributes.Builder {
 //
 //        protected Builder(ResourceLocation still, ResourceLocation flowing, BiFunction<FluidAttributes.Builder, Fluid, FluidAttributes> attributesFactory) {
@@ -202,7 +201,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     private NonNullConsumer<FluidData.Builder> attributesCallback = $ -> {};
     private NonNullConsumer<SimpleFlowableFluid.Properties> properties;
     @Nullable
-    private NonNullLazyValue<? extends SimpleFlowableFluid> source;
+    private NonNullSupplier<? extends SimpleFlowableFluid> source;
     private List<TagKey<Fluid>> tags = new ArrayList<>();
 
     protected FluidBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, ResourceLocation stillTexture, ResourceLocation flowingTexture,
@@ -293,7 +292,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
      */
     public FluidBuilder<T, P> source(NonNullFunction<SimpleFlowableFluid.Properties, ? extends SimpleFlowableFluid> factory) {
         this.defaultSource = false;
-        this.source = new NonNullLazyValue<>(() -> factory.apply(makeProperties()));
+        this.source = NonNullSupplier.lazy(() -> factory.apply(makeProperties()));
         return this;
     }
 
@@ -402,7 +401,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             throw new IllegalStateException("Only one call to bucket/noBucket per builder allowed");
         }
         this.defaultBucket = false;
-        NonNullLazyValue<? extends SimpleFlowableFluid> source = this.source;
+        NonNullSupplier<? extends SimpleFlowableFluid> source = this.source;
         if (source == null) {
             throw new IllegalStateException("Cannot create a bucket before creating a source block");
         }
@@ -452,7 +451,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     private SimpleFlowableFluid getSource() {
-        NonNullLazyValue<? extends SimpleFlowableFluid> source = this.source;
+        NonNullSupplier<? extends SimpleFlowableFluid> source = this.source;
         Preconditions.checkNotNull(source, "Fluid has no source block: " + sourceName);
         return source.get();
     }
@@ -472,7 +471,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         } else {
             attributes.translationKey(Util.makeDescriptionId("fluid", new ResourceLocation(getOwner().getModid(), sourceName)));
         }
-        NonNullLazyValue<? extends SimpleFlowableFluid> source = this.source;
+        NonNullSupplier<? extends SimpleFlowableFluid> source = this.source;
         SimpleFlowableFluid.Properties ret = new SimpleFlowableFluid.Properties(source == null ? null : source::get, asSupplier(), attributes);
         properties.accept(ret);
         return ret;
@@ -500,7 +499,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         if (defaultBucket == Boolean.TRUE) {
             bucket().register();
         }
-        NonNullLazyValue<? extends SimpleFlowableFluid> source = this.source;
+        NonNullSupplier<? extends SimpleFlowableFluid> source = this.source;
         if (source != null) {
             getCallback().accept(sourceName, Fluid.class, (FluidBuilder) this, source::get);
         } else {

@@ -37,7 +37,11 @@ public final class DataIngredient extends Ingredient {
 //        IIngredientSerializer<DataIngredient> getSerializer();
 
         void toNetwork(FriendlyByteBuf buffer);
-
+        
+        boolean checkInvalidation();
+        
+        void markValid();
+        
         boolean isVanilla();
     }
 

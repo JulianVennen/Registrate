@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.minecraft.core.Registry;
 import net.minecraft.tags.Tag;
 import net.minecraft.tags.TagKey;
+import net.minecraft.tags.TagKey;
 
 public class RegistrateTagsProvider<T> extends FabricTagProvider<T> implements RegistrateProvider {
 
@@ -32,8 +33,6 @@ public class RegistrateTagsProvider<T> extends FabricTagProvider<T> implements R
 
     @Override
     public TagAppender<T> tag(TagKey<T> tag) { return super.tag(tag); }
-
-    public FabricTagBuilder<T> Tag(TagKey<T> tag) { return (FabricTagBuilder<T>) super.tag(tag); }
 
     @Override
     public Tag.Builder getOrCreateRawBuilder(TagKey<T> tag) { return super.getOrCreateRawBuilder(tag); }
