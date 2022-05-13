@@ -1,6 +1,8 @@
 package com.tterrag.registrate.fabric;
 
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -22,6 +24,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+
+import javax.annotation.Nonnull;
 
 public abstract class SimpleFlowableFluid extends FlowingFluid {
 	private final Supplier<? extends Fluid> flowing;
@@ -48,12 +52,11 @@ public abstract class SimpleFlowableFluid extends FlowingFluid {
 		this.tickRate = properties.tickRate;
 	}
 
+	@Nonnull
 	@Override
 	public Optional<SoundEvent> getPickupSound() {
-		if (getSource() == this) {
-			return super.getPickupSound();
-		}
-		return getSource().getPickupSound();
+		boolean lava = defaultFluidState().is(FluidTags.LAVA);
+		return Optional.ofNullable(lava ? SoundEvents.BUCKET_FILL_LAVA : SoundEvents.BUCKET_FILL);
 	}
 
 	@Override
