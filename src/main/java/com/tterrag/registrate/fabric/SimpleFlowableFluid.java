@@ -50,6 +50,9 @@ public abstract class SimpleFlowableFluid extends FlowingFluid {
 
 	@Override
 	public Optional<SoundEvent> getPickupSound() {
+		if (getSource() == this) {
+			return super.getPickupSound();
+		}
 		return getSource().getPickupSound();
 	}
 
