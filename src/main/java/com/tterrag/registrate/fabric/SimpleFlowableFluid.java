@@ -1,6 +1,9 @@
 package com.tterrag.registrate.fabric;
 
+import net.minecraft.sounds.SoundEvent;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import net.minecraft.core.BlockPos;
@@ -43,6 +46,11 @@ public abstract class SimpleFlowableFluid extends FlowingFluid {
 		this.levelDecreasePerBlock = properties.levelDecreasePerBlock;
 		this.blastResistance = properties.blastResistance;
 		this.tickRate = properties.tickRate;
+	}
+
+	@Override
+	public Optional<SoundEvent> getPickupSound() {
+		return getSource().getPickupSound();
 	}
 
 	@Override
