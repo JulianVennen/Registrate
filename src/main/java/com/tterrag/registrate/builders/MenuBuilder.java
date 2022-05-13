@@ -3,12 +3,13 @@ package com.tterrag.registrate.builders;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.fabric.EnvExecutor;
 import com.tterrag.registrate.fabric.RegistryObject;
-import com.tterrag.registrate.fabric.ScreenHandlerRegistryExtension;
 import com.tterrag.registrate.util.entry.MenuEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
 
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,8 +19,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
-import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import org.jetbrains.annotations.Nullable;
 
 public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & MenuAccess<T>,  P> extends AbstractBuilder<MenuType<?>, MenuType<T>, P, MenuBuilder<T, S, P>> {
@@ -58,18 +57,16 @@ public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & Men
     protected @NonnullType MenuType<T> createEntry() {
         NonNullSupplier<MenuType<T>> supplier = this.asSupplier();
         MenuType<T> ret;
-        ScreenHandlerRegistryExtension.createOnly = true;
         if (this.factory == null) {
             ForgeMenuFactory<T> factory = this.forgeFactory;
-            ret = ScreenHandlerRegistry.registerExtended(null, (windowId, inv, buf) -> factory.create(supplier.get(), windowId, inv, buf));
+            ret = new ExtendedScreenHandlerType<>((windowId, inv, buf) -> factory.create(supplier.get(), windowId, inv, buf));
         } else {
             MenuFactory<T> factory = this.factory;
-            ret = ScreenHandlerRegistry.registerSimple(null, (syncId, inventory) -> factory.create(supplier.get(), syncId, inventory));
+            ret = new MenuType<>((syncId, inventory) -> factory.create(supplier.get(), syncId, inventory));
         }
-        ScreenHandlerRegistryExtension.createOnly = false;
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
             ScreenFactory<T, S> screenFactory = this.screenFactory.get();
-            ScreenRegistry.<T, S>register(ret, (type, inv, displayName) -> screenFactory.create(type, inv, displayName));
+            MenuScreens.register(ret, screenFactory::create);
         });
         return ret;
     }

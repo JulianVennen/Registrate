@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "FluidMixin",
-    "ScreenHandlerRegistryMixin",
     "accessor.BlockEntityRenderersAccessor",
     "accessor.FluidBlockAccessor",
     "accessor.LootContextParamSetsAccessor",
