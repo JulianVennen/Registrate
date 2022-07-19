@@ -7,7 +7,7 @@ package com.tterrag.registrate.util;
 //import java.util.concurrent.atomic.AtomicBoolean;
 //import java.util.function.Consumer;
 //
-//import org.jetbrains.annotations.Nullable;
+//import javax.annotation.Nullable;
 //
 //import org.apache.commons.lang3.tuple.Triple;
 //
@@ -87,7 +87,6 @@ package com.tterrag.registrate.util;
 //        toUnregister.add(Triple.of(bus, listener, event));
 //    }
 //
-//    @SuppressWarnings("deprecation")
 //    private static void onLoadComplete(FMLLoadCompleteEvent event) {
 //        event.enqueueWork(() -> {
 //            toUnregister.forEach(t -> {

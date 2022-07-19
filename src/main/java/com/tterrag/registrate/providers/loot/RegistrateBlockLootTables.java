@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import com.tterrag.registrate.AbstractRegistrate;
 
 import lombok.RequiredArgsConstructor;
+import net.minecraft.core.Registry;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTablesProvider;
 
@@ -32,7 +33,7 @@ public class RegistrateBlockLootTables extends FabricBlockLootTablesProvider imp
         this.parent = parent;
         this.callback = callback;
     }
-    
+
     @Override
     protected void generateBlockLootTables() {
         callback.accept(this);
@@ -40,7 +41,7 @@ public class RegistrateBlockLootTables extends FabricBlockLootTablesProvider imp
 
 //    @Override
     protected Iterable<Block> getKnownBlocks() {
-        return parent.getAll(Block.class).stream().map(Supplier::get).collect(Collectors.toList());
+        return parent.getAll(Registry.BLOCK_REGISTRY).stream().map(Supplier::get).collect(Collectors.toList());
     }
 
     // @formatter:off

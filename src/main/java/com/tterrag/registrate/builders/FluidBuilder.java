@@ -31,8 +31,7 @@ import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
 import net.minecraft.Util;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.Tag;
@@ -88,7 +87,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
 //    public static <P> FluidBuilder<SimpleFlowableFluid.Flowing, P> create(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, ResourceLocation stillTexture, ResourceLocation flowingTexture) {
 //        return create(owner, parent, name, callback, stillTexture, flowingTexture, (NonNullBiFunction<FluidAttributes.Builder, Fluid, FluidAttributes>) null);
 //    }
-    
+
     /**
      * Create a new {@link FluidBuilder} and configure data. The created builder will use the default fluid class ({@link SimpleFlowableFluid.Flowing}).
      * 
@@ -206,7 +205,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
 
     protected FluidBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, ResourceLocation stillTexture, ResourceLocation flowingTexture,
             /*@Nullable BiFunction<FluidAttributes.Builder, Fluid, FluidAttributes> attributesFactory,*/ NonNullFunction<SimpleFlowableFluid.Properties, T> factory) {
-        super(owner, parent, "flowing_" + name, callback, Fluid.class);
+        super(owner, parent, "flowing_" + name, callback, Registry.FLUID_REGISTRY);
         this.stillTexture = stillTexture;
         this.flowingTexture = flowingTexture;
         this.sourceName = name;
@@ -216,8 +215,8 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         this.factory = factory;
         
         String bucketName = this.bucketName;
-        this.properties = p -> p.bucket(() -> owner.get(bucketName, Item.class).get())
-                .block(() -> owner.<Block, LiquidBlock>get(name, Block.class).get());
+        this.properties = p -> p.bucket(() -> owner.get(bucketName, Registry.ITEM_REGISTRY).get())
+                .block(() -> owner.<Block, LiquidBlock>get(name, Registry.BLOCK_REGISTRY).get());
     }
     
     /**
@@ -430,7 +429,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     public final FluidBuilder<T, P> tag(TagKey<Fluid>... tags) {
         FluidBuilder<T, P> ret = this.tag(ProviderType.FLUID_TAGS, tags);
         if (this.tags.isEmpty()) {
-            ret.getOwner().<RegistrateTagsProvider<Fluid>, Fluid> setDataGenerator(ret.sourceName, getRegistryType(), ProviderType.FLUID_TAGS,
+            ret.getOwner().<RegistrateTagsProvider<Fluid>, Fluid>setDataGenerator(ret.sourceName, getRegistryKey(), ProviderType.FLUID_TAGS,
                     prov -> this.tags.stream().map(tag -> prov.tag(tag)).forEach(p -> p.add(getSource())));
         }
         this.tags.addAll(Arrays.asList(tags));
@@ -458,7 +457,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     
     private SimpleFlowableFluid.Properties makeProperties() {
         FluidData.Builder attributes = this.attributes.get();
-        RegistryEntry<Block> block = getOwner().getOptional(sourceName, Block.class);
+        RegistryEntry<Block> block = getOwner().getOptional(sourceName, Registry.BLOCK_REGISTRY);
         attributesCallback.accept(attributes);
         // Force the translation key after the user callback runs
         // This is done because we need to remove the lang data generator if using the block key,

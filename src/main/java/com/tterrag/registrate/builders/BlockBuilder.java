@@ -17,6 +17,7 @@ import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Registry;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
@@ -92,7 +93,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     private NonNullSupplier<Supplier<BlockColor>> colorHandler;
 
     protected BlockBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<BlockBehaviour.Properties, T> factory, NonNullSupplier<BlockBehaviour.Properties> initialProperties) {
-        super(owner, parent, name, callback, Block.class);
+        super(owner, parent, name, callback, Registry.BLOCK_REGISTRY);
         this.factory = factory;
         this.initialProperties = initialProperties;
     }
@@ -164,6 +165,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
         return this;
     }
 
+    @SuppressWarnings("deprecation")
     public BlockBuilder<T, P> addLayer(Supplier<Supplier<RenderType>> layer) {
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
             Preconditions.checkArgument(RenderType.chunkBufferLayers().contains(layer.get().get()), "Invalid block layer: " + layer);
@@ -175,19 +177,22 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
         return this;
     }
 
+    @SuppressWarnings("deprecation")
     protected void registerLayers(T entry) {
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            if (renderLayers.size() == 1) {
-                final RenderType layer = renderLayers.get(0).get().get();
-                BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
+            OneTimeEventReceiver.addModListener(FMLClientSetupEvent.class, $ -> {
+                if (renderLayers.size() == 1) {
+                    final RenderType layer = renderLayers.get(0).get().get();
+                    BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
             } else if (renderLayers.size() > 1) {
                 final Set<RenderType> layers = renderLayers.stream()
                         .map(s -> s.get().get())
                         .collect(Collectors.toSet());
                 for(RenderType layer : layers)
                     BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
-//                ItemBlockRenderTypes.setRenderLayer(entry, layers::contains);
-            }
+    //                ItemBlockRenderTypes.setRenderLayer(entry, layers::contains);
+                }
+            });
         });
     }
 
@@ -225,7 +230,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
      *            A factory for the item, which accepts the block object and properties and returns a new item
      * @return the {@link ItemBuilder} for the {@link BlockItem}
      */
-    public <I extends BlockItem> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
+    public <I extends Item> ItemBuilder<I, BlockBuilder<T, P>> item(NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
         return getOwner().<I, BlockBuilder<T, P>> item(this, getName(), p -> factory.apply(getEntry(), p))
                 .setData(ProviderType.LANG, NonNullBiConsumer.noop()) // FIXME Need a beetter API for "unsetting" providers
                 .model((ctx, prov) -> {

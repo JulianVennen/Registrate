@@ -19,14 +19,15 @@ import com.tterrag.registrate.util.nullness.NonnullType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-
 import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.registries.RegistryManager;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
 
@@ -57,12 +58,24 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     @Getter(AccessLevel.PROTECTED)
     private final BuilderCallback callback;
     @Getter(onMethod_ = {@Override})
-    private final Class<? super R> registryType;
+    private final ResourceKey<? extends Registry<R>> registryKey;
     
     private final Multimap<ProviderType<? extends RegistrateTagsProvider<?>>, TagKey<?>> tagsByType = HashMultimap.create();
     
     /** A supplier for the entry that will discard the reference to this builder after it is resolved */
     private final LazyRegistryEntry<T> safeSupplier = new LazyRegistryEntry<>(this);
+
+    @Deprecated
+    public AbstractBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, Class<? super R> registryType) {
+        this(owner, parent, name, callback, owner.<R>getRegistryKeyByClass(registryType));
+    }
+
+    @SuppressWarnings("null")
+    @Deprecated
+    @Override
+    public Class<? super R> getRegistryType() {
+        return RegistryManager.ACTIVE.getRegistry(registryKey).getRegistrySuperType();
+    }
 
     /**
      * Create the built entry. This method will be lazily resolved at registration time, so it is safe to bake in values from the builder.
@@ -74,9 +87,9 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
 
     @Override
     public RegistryEntry<T> register() {
-        return callback.accept(name, registryType, this, this::createEntry, this::createEntryWrapper);
+        return callback.accept(name, registryKey, this, this::createEntry, this::createEntryWrapper);
     }
-    
+
     protected RegistryEntry<T> createEntryWrapper(RegistryObject<T> delegate) {
         return new RegistryEntry<>(getOwner(), delegate);
     }

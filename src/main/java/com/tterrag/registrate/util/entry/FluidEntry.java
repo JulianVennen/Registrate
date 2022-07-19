@@ -31,7 +31,7 @@ public class FluidEntry<T extends SimpleFlowableFluid> extends RegistryEntry<T> 
         return get().isSame((Fluid) entry);
     }
 
-    @SuppressWarnings({ "unchecked", "null" })
+    @SuppressWarnings("unchecked")
     <S extends SimpleFlowableFluid> S getSource() {
         return (S) get().getSource();
     }

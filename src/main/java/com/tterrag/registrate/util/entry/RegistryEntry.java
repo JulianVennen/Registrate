@@ -11,6 +11,8 @@ import com.tterrag.registrate.util.nullness.NonnullType;
 
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Delegate;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.Registry;
@@ -88,13 +90,17 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
         return delegate == null ? null : delegate.orElse(null);
     }
 
-    @SuppressWarnings("unchecked")
+    public <R, E extends R> RegistryEntry<E> getSibling(ResourceKey<? extends Registry<R>> registryType) {
+        return this == EMPTY ? empty() : owner.get(getId().getPath(), registryType);
+    }
+
+    @Deprecated
     public <R, E extends R> RegistryEntry<E> getSibling(Class<? super R> registryType) {
-        return this == EMPTY ? empty() : owner.get(getId().getPath(), (Class<R>) registryType);
+        return this == EMPTY ? empty() : owner.<R, E>get(getId().getPath(), registryType);
     }
 
     public <R, E extends R> RegistryEntry<E> getSibling(Registry<R> registry) {
-        return getSibling(RegistryUtil.getRegistrationClass(registry));
+        return getSibling(registry.getRegistryKey());
     }
 
     /**
@@ -117,7 +123,7 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
     public <R> boolean is(R entry) {
         return get() == entry;
     }
-    
+
     @SuppressWarnings("unchecked")
     protected static <E extends RegistryEntry<?>> E cast(Class<? super E> clazz, RegistryEntry<?> entry) {
         if (clazz.isInstance(entry)) {
