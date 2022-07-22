@@ -12,7 +12,7 @@ targetCompatibility = JavaVersion.VERSION_16
 
 version = "MC${minecraft_version}-${project.mod_version}"
 group = "com.tterrag.registrate"
-archivesBaseName = "Registrate"
+archivesBaseName = "Registrate-Fabric"
 
 repositories {
     maven { url = 'https://repo.maven.apache.org/maven2' }
@@ -68,7 +68,6 @@ loom {
         }
     }
 }
-assemble.dependsOn runDatagen
 
 lombok {
     version = "1.18.20"
