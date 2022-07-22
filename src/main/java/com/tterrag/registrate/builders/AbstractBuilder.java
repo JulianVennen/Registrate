@@ -1,7 +1,5 @@
 package com.tterrag.registrate.builders;
 
-import java.util.Arrays;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.tterrag.registrate.AbstractRegistrate;
@@ -15,21 +13,14 @@ import com.tterrag.registrate.util.nullness.NonNullBiFunction;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.RegistryManager;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.material.Fluid;
+
+import java.util.Arrays;
 
 /**
  * Base class which most builders should extend, instead of implementing [@link {@link Builder} directly.
@@ -74,7 +65,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     @Deprecated
     @Override
     public Class<? super R> getRegistryType() {
-        return RegistryManager.ACTIVE.getRegistry(registryKey).getRegistrySuperType();
+        return Registry.ITEM_REGISTRY.getRegistry(registryKey).getRegistrySuperType();
     }
 
     /**

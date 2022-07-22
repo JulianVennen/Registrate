@@ -5,8 +5,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.*;
 import com.tterrag.registrate.builders.*;
-import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
-import com.tterrag.registrate.builders.EnchantmentBuilder.EnchantmentFactory;
 import com.tterrag.registrate.builders.MenuBuilder.ForgeMenuFactory;
 import com.tterrag.registrate.builders.MenuBuilder.MenuFactory;
 import com.tterrag.registrate.builders.MenuBuilder.ScreenFactory;
@@ -163,7 +161,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     @SuppressWarnings({ "null" })
     @Deprecated
-    public <R extends IForgeRegistryEntry<R>> ResourceKey<Registry<R>> getRegistryKeyByClass(Class<? super R> cls) {
+    public <R> ResourceKey<Registry<R>> getRegistryKeyByClass(Class<? super R> cls) {
         return RegistryManager.ACTIVE.<R>getRegistry(cls).getRegistryKey();
     }
 
@@ -338,7 +336,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      * @throws NullPointerException
      *             if current name has not been set via {@link #object(String)}
      */
-    public <R extends IForgeRegistryEntry<R>, T extends R> RegistryEntry<T> get(ResourceKey<? extends Registry<R>> type) {
+    public <R, T extends R> RegistryEntry<T> get(ResourceKey<? extends Registry<R>> type) {
         return this.<R, T>get(currentName(), type);
     }
 
@@ -403,7 +401,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      * @throws IllegalArgumentException
      *             if no such registration has been done
      */
-    public <R extends IForgeRegistryEntry<R>, T extends R> RegistryEntry<T> get(String name, ResourceKey<? extends Registry<R>> type) {
+    public <R, T extends R> RegistryEntry<T> get(String name, ResourceKey<? extends Registry<R>> type) {
         return this.<R, T>getRegistration(name, type).getDelegate();
     }
 
@@ -414,7 +412,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     @Beta
-    public <R extends IForgeRegistryEntry<R>, T extends R> RegistryEntry<T> getOptional(String name, ResourceKey<? extends Registry<R>> type) {
+    public <R, T extends R> RegistryEntry<T> getOptional(String name, ResourceKey<? extends Registry<R>> type) {
         Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, type);
         return reg == null ? RegistryEntry.empty() : reg.getDelegate();
     }
@@ -448,7 +446,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     @SuppressWarnings({ "null", "unchecked" })
-    public <R extends IForgeRegistryEntry<R>> Collection<RegistryEntry<R>> getAll(ResourceKey<? extends Registry<R>> type) {
+    public <R> Collection<RegistryEntry<R>> getAll(ResourceKey<? extends Registry<R>> type) {
         return registrations.column(type).values().stream().map(r -> (RegistryEntry<R>) r.getDelegate()).collect(Collectors.toList());
     }
 
@@ -458,7 +456,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     @SuppressWarnings("unchecked")
-    public <R extends IForgeRegistryEntry<R>, T extends R> S addRegisterCallback(String name, ResourceKey<? extends Registry<R>> registryType, NonNullConsumer<? super T> callback) {
+    public <R, T extends R> S addRegisterCallback(String name, ResourceKey<? extends Registry<R>> registryType, NonNullConsumer<? super T> callback) {
         Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, registryType);
         if (reg == null) {
             registerCallbacks.put(Pair.of(name, registryType), callback);
@@ -473,7 +471,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         return addRegisterCallback(this.<R>getRegistryKeyByClass(registryType), callback);
     }
 
-    public <R extends IForgeRegistryEntry<R>> S addRegisterCallback(ResourceKey<? extends Registry<R>> registryType, Runnable callback) {
+    public <R> S addRegisterCallback(ResourceKey<? extends Registry<R>> registryType, Runnable callback) {
         afterRegisterCallbacks.put((ResourceKey<? extends Registry<?>>) registryType, callback);
         return self();
     }
@@ -564,7 +562,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      *            A callback to be invoked during data generation
      * @return this {@link AbstractRegistrate}
      */
-    public <P extends RegistrateProvider, R extends IForgeRegistryEntry<R>> S setDataGenerator(String entry, ResourceKey<? extends Registry<R>> registryType, ProviderType<P> type, NonNullConsumer<? extends P> cons) {
+    public <P extends RegistrateProvider, R> S setDataGenerator(String entry, ResourceKey<? extends Registry<R>> registryType, ProviderType<P> type, NonNullConsumer<? extends P> cons) {
         if (!doDatagen.get()) return self();
         @SuppressWarnings("null")
         Consumer<? extends RegistrateProvider> existing = datagensByEntry.put(Pair.of(entry, registryType), type, cons);
@@ -874,7 +872,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         return accept(name, this.<R>getRegistryKeyByClass(type), builder, creator, entryFactory);
     }
 
-    protected <R extends IForgeRegistryEntry<R>, T extends R> RegistryEntry<T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> creator, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory) {
+    protected <R, T extends R> RegistryEntry<T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> creator, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory) {
         Registration<R, T> reg = new Registration<>(new ResourceLocation(modid, name), type, creator, entryFactory);
         log.debug(DebugMarkers.REGISTER, "Captured registration for entry {} of type {}", name, type.location());
         registerCallbacks.removeAll(Pair.of(name, type)).forEach(callback -> {
@@ -899,19 +897,19 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     // Generic
 
-    public <R extends IForgeRegistryEntry<R>, T extends R> RegistryEntry<T> simple(ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
+    public <R, T extends R> RegistryEntry<T> simple(ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
         return simple(currentName(), registryType, factory);
     }
 
-    public <R extends IForgeRegistryEntry<R>, T extends R> RegistryEntry<T> simple(String name, ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
+    public <R, T extends R> RegistryEntry<T> simple(String name, ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
         return simple(this, name, registryType, factory);
     }
 
-    public <R extends IForgeRegistryEntry<R>, T extends R, P> RegistryEntry<T> simple(P parent, ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
+    public <R, T extends R, P> RegistryEntry<T> simple(P parent, ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
         return simple(parent, currentName(), registryType, factory);
     }
 
-    public <R extends IForgeRegistryEntry<R>, T extends R, P> RegistryEntry<T> simple(P parent, String name, ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
+    public <R, T extends R, P> RegistryEntry<T> simple(P parent, String name, ResourceKey<? extends Registry<R>> registryType, NonNullSupplier<T> factory) {
         return entry(name, callback -> new NoConfigBuilder<R, T, P>(this, parent, name, callback, registryType, factory)).register();
     }
 

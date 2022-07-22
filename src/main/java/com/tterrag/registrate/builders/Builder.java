@@ -65,11 +65,6 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
     @Deprecated
     Class<? super R> getRegistryType();
 
-    @SuppressWarnings({ "null", "removal" })
-    default ResourceKey<? extends Registry<R>> getRegistryKey() {
-        return RegistryManager.ACTIVE.<R>getRegistry(getRegistryType()).getRegistryKey();
-    }
-
     /**
      * Get the {@link RegistryEntry} representing the entry built by this builder. Cannot be called before the builder is built.
      * 
@@ -197,7 +192,7 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
      * @return this {@link Builder}
      */
     @Deprecated
-    default <OR extends IForgeRegistryEntry<OR>> S onRegisterAfter(Class<? super OR> dependencyType, NonNullConsumer<? super T> callback) {
+    default <OR> S onRegisterAfter(Class<? super OR> dependencyType, NonNullConsumer<? super T> callback) {
         return onRegisterAfter(getOwner().<OR>getRegistryKeyByClass(dependencyType), callback);
     }
 
