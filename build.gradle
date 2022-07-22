@@ -11,7 +11,7 @@ sourceCompatibility = JavaVersion.VERSION_16
 targetCompatibility = JavaVersion.VERSION_16
 
 version = "MC${minecraft_version}-${project.mod_version}"
-group = "com.tterrag.registrate"
+group = "com.tterrag.registrate_fabric"
 archivesBaseName = "Registrate-Fabric"
 
 repositories {
