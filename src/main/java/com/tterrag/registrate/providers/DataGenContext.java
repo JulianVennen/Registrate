@@ -34,7 +34,7 @@ public class DataGenContext<R, E extends R> implements NonNullSupplier<E> {
         return entry.get();
     }
 
-    public static <R extends IForgeRegistryEntry<R>, E extends R> DataGenContext<R, E> from(Builder<R, E, ?, ?> builder, ResourceKey<? extends Registry<R>> type) {
+    public static <R, E extends R> DataGenContext<R, E> from(Builder<R, E, ?, ?> builder, ResourceKey<? extends Registry<R>> type) {
         return new DataGenContext<R, E>(NonNullSupplier.of(builder.getOwner().<R, E>get(builder.getName(), type)), builder.getName(),
                 new ResourceLocation(builder.getOwner().getModid(), builder.getName()));
     }

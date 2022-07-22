@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.fabric.RegistryObject;
+import com.tterrag.registrate.fabric.RegistryUtil;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
@@ -65,7 +66,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     @Deprecated
     @Override
     public Class<? super R> getRegistryType() {
-        return Registry.ITEM_REGISTRY.getRegistry(registryKey).getRegistrySuperType();
+        return RegistryUtil.getRegistrationClass(registryKey);
     }
 
     /**

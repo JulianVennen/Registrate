@@ -4,6 +4,7 @@ import java.util.function.Function;
 
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.fabric.RegistryObject;
+import com.tterrag.registrate.fabric.RegistryUtil;
 import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateProvider;
@@ -64,6 +65,11 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
     
     @Deprecated
     Class<? super R> getRegistryType();
+
+    @SuppressWarnings({"null", "unchecked"})
+    default ResourceKey<? extends Registry<R>> getRegistryKey() {
+        return (ResourceKey<? extends Registry<R>>) RegistryUtil.getRegistry(getRegistryType()).key();
+    }
 
     /**
      * Get the {@link RegistryEntry} representing the entry built by this builder. Cannot be called before the builder is built.

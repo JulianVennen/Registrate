@@ -16,22 +16,24 @@ import net.minecraft.world.level.storage.loot.LootTable;
 
 @RequiredArgsConstructor
 public class RegistrateEntityLootTables extends EntityLoot implements RegistrateLootTables {
-    
+
     private final AbstractRegistrate<?> parent;
     private final Consumer<RegistrateEntityLootTables> callback;
-    
-    @Override
-    protected void addTables() {
+
+    // fabric: overrides handled by EntityLootMixin
+
+//    @Override
+    public void addTables() {
         callback.accept(this);
     }
-    
-    @Override
-    protected Iterable<EntityType<?>> getKnownEntities() {
+
+//    @Override
+    public Iterable<EntityType<?>> getKnownEntities() {
         return parent.getAll(Registry.ENTITY_TYPE_REGISTRY).stream().map(Supplier::get).collect(Collectors.toList());
     }
 
-    @Override
-    protected boolean isNonLiving(EntityType<?> entitytype) {
+//    @Override
+    public boolean isNonLiving(EntityType<?> entitytype) {
         return entitytype.getCategory() == MobCategory.MISC; // TODO open this to customization?
     }
 

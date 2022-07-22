@@ -5,6 +5,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.*;
 import com.tterrag.registrate.builders.*;
+import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
+import com.tterrag.registrate.builders.EnchantmentBuilder.EnchantmentFactory;
 import com.tterrag.registrate.builders.MenuBuilder.ForgeMenuFactory;
 import com.tterrag.registrate.builders.MenuBuilder.MenuFactory;
 import com.tterrag.registrate.builders.MenuBuilder.ScreenFactory;
@@ -159,10 +161,10 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         return (S) this;
     }
 
-    @SuppressWarnings({ "null" })
+    @SuppressWarnings({ "null", "unchecked" })
     @Deprecated
     public <R> ResourceKey<Registry<R>> getRegistryKeyByClass(Class<? super R> cls) {
-        return RegistryManager.ACTIVE.<R>getRegistry(cls).getRegistryKey();
+        return (ResourceKey<Registry<R>>) RegistryUtil.getRegistry(cls).key();
     }
 
 //    protected S registerEventListeners(IEventBus bus) {
@@ -215,12 +217,9 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected void onRegister(RegistryEvent.Register<?> event) {
-        ResourceKey<Registry<?>> type = (ResourceKey<Registry<?>>) (ResourceKey) event.getRegistry().getRegistryKey(); // TODO move to rawtype event parameter
-        if (type == null) {
-            log.debug(DebugMarkers.REGISTER, "Skipping invalid registry with no supertype: " + registryId);
-            return;
-        }
+    protected void onRegister(Registry<?> registry) {
+        ResourceKey<Registry<?>> type = (ResourceKey<Registry<?>>) registry.key(); // TODO move to rawtype event parameter
+        ResourceLocation registryId = type.location();
         if (!registerCallbacks.isEmpty()) {
             registerCallbacks.asMap().forEach((k, v) -> log.warn("Found {} unused register callback(s) for entry {} [{}]. Was the entry ever registered?", v.size(), k.getLeft(), k.getRight().location()));
             registerCallbacks.clear();
@@ -233,7 +232,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
             log.debug(DebugMarkers.REGISTER, "Registering {} known objects of type {}", registrationsForType.size(), type.location());
             for (Entry<String, Registration<?, ?>> e : registrationsForType.entrySet()) {
                 try {
-                    e.getValue().register((Registry) event);
+                    e.getValue().register((Registry) registry);
                     log.debug(DebugMarkers.REGISTER, "Registered {} to registry {}", e.getValue().getName(), registryId);
                 } catch (Exception ex) {
                     String err = "Unexpected error while registering entry " + e.getValue().getName() + " to registry " + registryId;
@@ -247,10 +246,9 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     protected void onRegisterLate(Registry<?> event) {
         @SuppressWarnings("unchecked")
-        ResourceKey<Registry<?>> type = (ResourceKey<Registry<?>>) (ResourceKey) event.getRegistry().getRegistryKey();
+        ResourceKey<Registry<?>> type = (ResourceKey<Registry<?>>) event.key();
         Collection<Runnable> callbacks = afterRegisterCallbacks.get(type);
         callbacks.forEach(Runnable::run);
         callbacks.clear();

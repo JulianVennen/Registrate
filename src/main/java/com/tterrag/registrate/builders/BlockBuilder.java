@@ -177,22 +177,19 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
         return this;
     }
 
-    @SuppressWarnings("deprecation")
     protected void registerLayers(T entry) {
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            OneTimeEventReceiver.addModListener(FMLClientSetupEvent.class, $ -> {
-                if (renderLayers.size() == 1) {
-                    final RenderType layer = renderLayers.get(0).get().get();
-                    BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
+            if (renderLayers.size() == 1) {
+                final RenderType layer = renderLayers.get(0).get().get();
+                BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
             } else if (renderLayers.size() > 1) {
                 final Set<RenderType> layers = renderLayers.stream()
                         .map(s -> s.get().get())
                         .collect(Collectors.toSet());
                 for(RenderType layer : layers)
                     BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
-    //                ItemBlockRenderTypes.setRenderLayer(entry, layers::contains);
-                }
-            });
+                //                ItemBlockRenderTypes.setRenderLayer(entry, layers::contains);
+            }
         });
     }
 

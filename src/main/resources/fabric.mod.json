@@ -22,6 +22,9 @@
     "client": [
       "com.tterrag.registrate.fabric.ClientInit"
     ],
+    "preLaunch": [
+      "com.llamalad7.mixinextras.MixinExtrasBootstrap::init"
+    ],
     "fabric-datagen": [
       "com.tterrag.registrate.Registrate"
     ]

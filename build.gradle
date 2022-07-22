@@ -3,6 +3,7 @@
 plugins {
     id 'fabric-loom' version '0.11-SNAPSHOT'
     id "io.freefair.lombok" version "6.1.0-m3"
+    id 'io.github.juuxel.loom-quiltflower' version '1.+' // Quiltflower, a better decompiler
     id 'maven-publish'
 }
 
@@ -16,6 +17,7 @@ archivesBaseName = "Registrate"
 repositories {
     maven { url = 'https://repo.maven.apache.org/maven2' }
     maven { url = 'https://mvn.devos.one/snapshots' }
+    maven { url = 'https://jitpack.io' }
 }
 
 dependencies {
@@ -32,6 +34,9 @@ dependencies {
     include(modImplementation(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
 
     modImplementation(include("me.alphamode:ForgeTags:2.1"))
+
+    implementation(include("com.github.LlamaLad7:MixinExtras:0.0.11"))
+    annotationProcessor("com.github.LlamaLad7:MixinExtras:0.0.11")
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
 }

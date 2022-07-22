@@ -43,6 +43,11 @@ public class RegistryObject<T> implements Supplier<T> {
 		return new RegistryObject<>(id, registry);
 	}
 
+	@Deprecated(forRemoval = true, since = "1.18.2")
+	public static <T, U extends T> RegistryObject<U> of(final ResourceLocation name, final ResourceLocation registryName, String modid) {
+		return new RegistryObject<>(name, (Registry<U>) Registry.REGISTRY.get(registryName));
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <T> RegistryObject<T> empty() {
 		return (RegistryObject<T>) EMPTY;

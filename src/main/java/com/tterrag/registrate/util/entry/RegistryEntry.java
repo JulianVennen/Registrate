@@ -100,7 +100,7 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
     }
 
     public <R, E extends R> RegistryEntry<E> getSibling(Registry<R> registry) {
-        return getSibling(registry.getRegistryKey());
+        return getSibling(registry.key());
     }
 
     /**

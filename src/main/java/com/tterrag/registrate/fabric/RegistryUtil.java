@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.stats.StatType;
@@ -58,6 +59,12 @@ public class RegistryUtil {
 	@SuppressWarnings("unchecked")
 	public static <T> Class<T> getRegistrationClass(Registry<T> registry) {
 		return (Class<T>) getRegistryMap().get(registry);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Class<T> getRegistrationClass(ResourceKey<? extends Registry<?>> key) {
+		Registry<?> registry = Registry.REGISTRY.get(key.location());
+		return (Class<T>) getRegistrationClass(registry);
 	}
 
 	public static BiMap<Registry<?>, Class<?>> getRegistryMap() {
