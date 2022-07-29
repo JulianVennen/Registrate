@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.tterrag.registrate.fabric.LanguageProvider;
 import net.fabricmc.api.EnvType;
+import net.minecraft.data.CachedOutput;
 import org.apache.commons.lang3.StringUtils;
 
 import com.tterrag.registrate.AbstractRegistrate;
@@ -22,11 +23,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.material.Fluid;
 
 public class RegistrateLangProvider extends LanguageProvider implements RegistrateProvider {
     

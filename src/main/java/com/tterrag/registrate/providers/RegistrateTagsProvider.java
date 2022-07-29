@@ -6,8 +6,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 
 import net.minecraft.core.Registry;
-import net.minecraft.tags.Tag;
-import net.minecraft.tags.TagKey;
+import net.minecraft.tags.TagBuilder;
 import net.minecraft.tags.TagKey;
 
 public class RegistrateTagsProvider<T> extends FabricTagProvider<T> implements RegistrateProvider {

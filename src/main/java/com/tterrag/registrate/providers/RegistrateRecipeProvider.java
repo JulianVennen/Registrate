@@ -11,6 +11,7 @@ import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.DataIngredient;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
 import net.minecraft.advancements.critereon.EnterBlockTrigger;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
@@ -40,10 +41,9 @@ import net.minecraft.world.level.block.Block;
 import me.alphamode.forgetags.Tags;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
-import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipesProvider;
 import org.jetbrains.annotations.Nullable;
 
-public class RegistrateRecipeProvider extends FabricRecipesProvider implements RegistrateProvider, Consumer<FinishedRecipe> {
+public class RegistrateRecipeProvider extends FabricRecipeProvider implements RegistrateProvider, Consumer<FinishedRecipe> {
     
     private final AbstractRegistrate<?> owner;
 

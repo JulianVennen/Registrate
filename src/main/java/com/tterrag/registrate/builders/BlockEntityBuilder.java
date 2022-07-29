@@ -15,7 +15,7 @@ import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.minecraft.core.Registry;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -73,7 +73,7 @@ public class BlockEntityBuilder<T extends BlockEntity, P> extends AbstractBuilde
     private NonNullSupplier<NonNullFunction<BlockEntityRendererProvider.Context, BlockEntityRenderer<? super T>>> renderer;
 
     protected BlockEntityBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, BlockEntityFactory<T> factory) {
-        super(owner, parent, name, callback, ForgeRegistries.Keys.BLOCK_ENTITY_TYPES);
+        super(owner, parent, name, callback, Registry.BLOCK_ENTITY_TYPE_REGISTRY);
         this.factory = factory;
     }
     

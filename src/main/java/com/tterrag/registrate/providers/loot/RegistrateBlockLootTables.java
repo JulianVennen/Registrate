@@ -6,10 +6,9 @@ import java.util.stream.Collectors;
 
 import com.tterrag.registrate.AbstractRegistrate;
 
-import lombok.RequiredArgsConstructor;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider;
 import net.minecraft.core.Registry;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
-import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTablesProvider;
 
 import net.minecraft.data.loot.BlockLoot;
 import net.minecraft.world.item.Item;
@@ -23,7 +22,7 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 
 //@RequiredArgsConstructor
-public class RegistrateBlockLootTables extends FabricBlockLootTablesProvider implements RegistrateLootTables {
+public class RegistrateBlockLootTables extends FabricBlockLootTableProvider implements RegistrateLootTables {
     
     private final AbstractRegistrate<?> parent;
     private final Consumer<RegistrateBlockLootTables> callback;

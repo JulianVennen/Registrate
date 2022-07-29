@@ -24,10 +24,6 @@ public class RegistryObject<T> implements Supplier<T> {
 		id = null;
 	}
 
-	private RegistryObject(ResourceLocation id, Class<? super T> registryType) {
-		this(id, RegistryUtil.getRegistry(registryType));
-	}
-
 	@SuppressWarnings("unchecked")
 	private RegistryObject(ResourceLocation id, Registry<? super T> registry) {
 		Objects.requireNonNull(registry);
@@ -35,16 +31,11 @@ public class RegistryObject<T> implements Supplier<T> {
 		object = (T) registry.get(this.id);
 	}
 
-	public static <T> RegistryObject<T> of(ResourceLocation id, Class<? super T> registryType) {
-		return new RegistryObject<>(id, registryType);
-	}
-
 	public static <T> RegistryObject<T> of(ResourceLocation id, Registry<? super T> registry) {
 		return new RegistryObject<>(id, registry);
 	}
 
-	@Deprecated(forRemoval = true, since = "1.18.2")
-	public static <T, U extends T> RegistryObject<U> of(final ResourceLocation name, final ResourceLocation registryName, String modid) {
+	public static <T, U extends T> RegistryObject<U> create(final ResourceLocation name, final ResourceLocation registryName, String modid) {
 		return new RegistryObject<>(name, (Registry<U>) Registry.REGISTRY.get(registryName));
 	}
 

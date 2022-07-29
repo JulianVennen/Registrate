@@ -1,5 +1,6 @@
 package com.tterrag.registrate.util.entry;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -58,16 +59,6 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
         this.delegate = delegate;
     }
 
-    private static final Method _updateReference = Util.make(() -> {
-        try {
-            var ret = RegistryObject.class.getDeclaredMethod("updateReference", IForgeRegistry.class);
-            ret.setAccessible(true);
-            return ret;
-        } catch (NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException(e);
-        }
-    });
-
     /**
      * Update the underlying entry manually from the given registry.
      *
@@ -76,13 +67,7 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
      */
     public void updateReference(Registry<? super T> registry) {
         RegistryObject<T> delegate = this.delegate;
-        // FIXME PORT
-//        Objects.requireNonNull(delegate, "Registry entry is empty").updateReference(registry);
-        try {
-            _updateReference.invoke(Objects.requireNonNull(delegate, "Registry entry is empty"), registry);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        Objects.requireNonNull(delegate, "Registry entry is empty").updateReference(registry);
     }
 
     /**
@@ -110,8 +95,8 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
         return this == EMPTY ? empty() : owner.get(getId().getPath(), registryType);
     }
 
-    public <R, E extends R> RegistryEntry<E> getSibling(IForgeRegistry<R> registry) {
-        return getSibling(registry.getRegistryKey());
+    public <R, E extends R> RegistryEntry<E> getSibling(Registry<R> registry) {
+        return getSibling(registry.key());
     }
 
     /**
