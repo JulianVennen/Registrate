@@ -16,7 +16,6 @@ import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
@@ -91,7 +90,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
 
 
     protected EntityBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, EntityType.EntityFactory<T> factory, MobCategory classification) {
-        super(owner, parent, name, callback, Registry.ENTITY_TYPE_REGISTRY);
+        super(owner, parent, name, callback, ForgeRegistries.Keys.ENTITY_TYPES);
         this.builder = () -> FabricEntityTypeBuilder.create(classification, factory);
     }
 
@@ -230,8 +229,8 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     }
 
     /**
-     * Assign the default translation, as specified by {@link RegistrateLangProvider#getAutomaticName(NonNullSupplier)}. This is the default, so it is generally not necessary to call, unless for undoing
-     * previous changes.
+     * Assign the default translation, as specified by {@link RegistrateLangProvider#getAutomaticName(NonNullSupplier, net.minecraft.resources.ResourceKey)}. This is the default, so it is generally
+     * not necessary to call, unless for undoing previous changes.
      *
      * @return this {@link EntityBuilder}
      */

@@ -32,17 +32,21 @@ public class FluidEntry<T extends SimpleFlowableFluid> extends RegistryEntry<T> 
     }
 
     @SuppressWarnings("unchecked")
-    <S extends SimpleFlowableFluid> S getSource() {
+    public <S extends SimpleFlowableFluid> S getSource() {
         return (S) get().getSource();
     }
 
+    public FluidType getType() {
+        return get().getFluidType();
+    }
+
     @SuppressWarnings({ "unchecked", "null" })
-    <B extends Block> Optional<B> getBlock() {
+    public <B extends Block> Optional<B> getBlock() {
         return (Optional<B>) Optional.ofNullable(block).map(RegistryEntry::get);
     }
 
     @SuppressWarnings({ "unchecked", "null" })
-    <I extends Item> Optional<I> getBucket() {
+    public <I extends Item> Optional<I> getBucket() {
         return Optional.ofNullable((I) get().getBucket());
     }
 }

@@ -38,10 +38,4 @@ public class DataGenContext<R, E extends R> implements NonNullSupplier<E> {
         return new DataGenContext<R, E>(NonNullSupplier.of(builder.getOwner().<R, E>get(builder.getName(), type)), builder.getName(),
                 new ResourceLocation(builder.getOwner().getModid(), builder.getName()));
     }
-
-    @Deprecated
-    public static <R, E extends R> DataGenContext<R, E> from(Builder<R, E, ?, ?> builder, Class<? super R> clazz) {
-        return new DataGenContext<R, E>(NonNullSupplier.of(builder.getOwner().<R, E>get(builder.getName(), clazz)), builder.getName(),
-                new ResourceLocation(builder.getOwner().getModid(), builder.getName()));
-    }
 }

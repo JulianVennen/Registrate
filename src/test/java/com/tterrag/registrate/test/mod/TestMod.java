@@ -1,7 +1,7 @@
 package com.tterrag.registrate.test.mod;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 import com.tterrag.registrate.fabric.SimpleFlowableFluid;
 
@@ -33,7 +33,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
@@ -132,7 +131,7 @@ public class TestMod implements ModInitializer {
 
                     @Override
                     public Component getDisplayName() {
-                        return new TextComponent("Test");
+                        return Component.literal("Test");
                     }
                 });
             }
@@ -200,10 +199,9 @@ public class TestMod implements ModInitializer {
 //        }
 //    }
 
-//    private static class TestCustomRegistryEntry extends ForgeRegistryEntry<TestCustomRegistryEntry> {}
+//    private static class TestCustomRegistryEntry {}
 
     private final Registrate registrate = Registrate.create("testmod").creativeModeTab(() -> FabricItemGroupBuilder.build(new ResourceLocation("testmod", "testmod"), () -> new ItemStack(Items.EGG)), "Test Mod");
-
     private final AtomicBoolean sawCallback = new AtomicBoolean();
 
     private final RegistryEntry<Item> testitem = registrate.object("testitem")
@@ -225,9 +223,8 @@ public class TestMod implements ModInitializer {
     private final BlockEntry<TestBlock> testblock = registrate.object("testblock")
             .block(TestBlock::new)
                 .properties(p -> p.noOcclusion())
-                .addLayer(() -> RenderType::cutout)
-//                .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
-//                                prov.models().withExistingParent(ctx.getName(), new ResourceLocation("block/glass"))))
+                .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
+                                prov.models().withExistingParent(ctx.getName(), new ResourceLocation("block/glass")).renderType(prov.mcLoc("cutout"))))
                 .transform(TestMod::applyDiamondDrop)
                 .recipe((ctx, prov) -> {
                     ShapedRecipeBuilder.shaped(ctx.getEntry())
@@ -259,7 +256,8 @@ public class TestMod implements ModInitializer {
             .register();
 
     private final ItemEntry<BlockItem> testblockitem = (ItemEntry<BlockItem>) testblock.<Item, BlockItem>getSibling(Registry.ITEM_REGISTRY);
-    private final BlockEntityEntry<ChestBlockEntity> testblockbe = BlockEntityEntry.cast(testblock.getSibling(Registry.BLOCK_ENTITY_TYPE));
+    private final BlockEntityEntry<ChestBlockEntity> testblockbe = BlockEntityEntry.cast(testblock.getSibling(ForgeRegistries.BLOCK_ENTITY_TYPES));
+    
     @SuppressWarnings("deprecation")
     private final RegistryEntry<EntityType<TestEntity>> testentity = registrate.object("testentity")
             .entity(TestEntity::new, MobCategory.CREATURE)
@@ -281,14 +279,29 @@ public class TestMod implements ModInitializer {
             .register();
 
     private final FluidEntry<SimpleFlowableFluid.Flowing> testfluid = registrate.object("testfluid")
-            .fluid(new ResourceLocation("block/water_flow"), new ResourceLocation("block/lava_still"))
-            .attributes(a -> a.luminosity(15))
-            .properties(p -> p.canMultiply())
+            .fluid(new ResourceLocation("block/water_flow"), new ResourceLocation("block/lava_still"), (props, still, flow) -> new FluidType(props) {
+                // And now you can do custom behaviours.
+                @Override
+                public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
+                    consumer.accept(new IClientFluidTypeExtensions() {
+                        @Override
+                        public ResourceLocation getStillTexture() {
+                            return still;
+                        }
+
+                        @Override
+                        public ResourceLocation getFlowingTexture() {
+                            return flow;
+                        }
+                    });
+                }
+            })
+            .properties(p -> p.lightLevel(15).canConvertToSource(true))
+            .renderType(RenderType::translucent)
             .noBucket()
 //            .bucket()
 //                .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.mcLoc("item/water_bucket")))
 //                .build()
-//            .removeTag(FluidTags.WATER)
             .register();
 
     private final RegistryEntry<MenuType<ChestMenu>> testmenu = registrate.object("testmenu")
@@ -350,10 +363,9 @@ public class TestMod implements ModInitializer {
 //            .dimensionTypeCallback(t -> testdimensiontype = t)
 //            .register();
 
-//    private final ResourceKey<Registry<TestCustomRegistryEntry>> CUSTOM_REGISTRY = ResourceKey.createRegistryKey(new ResourceLocation("testmod", "custom"));
-//    private final Supplier<IForgeRegistry<TestCustomRegistryEntry>> customregistry = registrate.makeRegistry("custom", TestCustomRegistryEntry.class, () -> new RegistryBuilder<>());
-//    private final RegistryEntry<TestCustomRegistryEntry> testcustom = registrate.object("testcustom")
-//            .simple(CUSTOM_REGISTRY, TestCustomRegistryEntry::new);
+    private final ResourceKey<Registry<TestCustomRegistryEntry>> CUSTOM_REGISTRY = registrate.makeRegistry("custom", () -> new RegistryBuilder<>());
+    private final RegistryEntry<TestCustomRegistryEntry> testcustom = registrate.object("testcustom")
+            .simple(CUSTOM_REGISTRY, TestCustomRegistryEntry::new);
 
 //    private final BlockBuilder<Block, Registrate> INVALID_TEST = registrate.object("invalid")
 //            .block(Block::new)

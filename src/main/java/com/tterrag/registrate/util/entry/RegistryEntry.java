@@ -11,6 +11,7 @@ import com.tterrag.registrate.util.nullness.NonnullType;
 
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Delegate;
+import net.minecraft.Util;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import org.jetbrains.annotations.Nullable;
@@ -18,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.Registry;
 
 /**
- * Wraps a {@link RegistryObject}, providing a cleaner API with null-safe access, and registrate-specific extensions such as {@link #getSibling(Class)}.
+ * Wraps a {@link RegistryObject}, providing a cleaner API with null-safe access, and registrate-specific extensions such as {@link #getSibling(ResourceKey)}.
  *
  * @param <T>
  *            The type of the entry
@@ -57,16 +58,31 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
         this.delegate = delegate;
     }
 
+    private static final Method _updateReference = Util.make(() -> {
+        try {
+            var ret = RegistryObject.class.getDeclaredMethod("updateReference", IForgeRegistry.class);
+            ret.setAccessible(true);
+            return ret;
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new RuntimeException(e);
+        }
+    });
+
     /**
      * Update the underlying entry manually from the given registry.
      *
      * @param registry
      *            The registry to pull the entry from.
      */
-    @SuppressWarnings("unchecked")
     public void updateReference(Registry<? super T> registry) {
         RegistryObject<T> delegate = this.delegate;
-        Objects.requireNonNull(delegate, "Registry entry is empty").updateReference(registry);
+        // FIXME PORT
+//        Objects.requireNonNull(delegate, "Registry entry is empty").updateReference(registry);
+        try {
+            _updateReference.invoke(Objects.requireNonNull(delegate, "Registry entry is empty"), registry);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -94,13 +110,8 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
         return this == EMPTY ? empty() : owner.get(getId().getPath(), registryType);
     }
 
-    @Deprecated
-    public <R, E extends R> RegistryEntry<E> getSibling(Class<? super R> registryType) {
-        return this == EMPTY ? empty() : owner.<R, E>get(getId().getPath(), registryType);
-    }
-
-    public <R, E extends R> RegistryEntry<E> getSibling(Registry<R> registry) {
-        return getSibling(registry.key());
+    public <R, E extends R> RegistryEntry<E> getSibling(IForgeRegistry<R> registry) {
+        return getSibling(registry.getRegistryKey());
     }
 
     /**

@@ -1,13 +1,14 @@
 package com.tterrag.registrate.util.entry;
 
 import com.tterrag.registrate.AbstractRegistrate;
-
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 
 import com.tterrag.registrate.fabric.RegistryObject;
 import org.jetbrains.annotations.Nullable;
+
+import javax.annotation.Nullable;
 
 public class EntityEntry<T extends Entity> extends RegistryEntry<EntityType<T>> {
 

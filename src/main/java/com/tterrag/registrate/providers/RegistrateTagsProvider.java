@@ -19,6 +19,11 @@ public class RegistrateTagsProvider<T> extends FabricTagProvider<T> implements R
         super(generatorIn, registryIn, name, "Tags (" + name + ")");
         this.owner = owner;
         this.type = type;
+        this.name = name;
+    }
+
+    public String getName() {
+        return "Tags (" + name + ")";
     }
 
     @Override
@@ -35,5 +40,5 @@ public class RegistrateTagsProvider<T> extends FabricTagProvider<T> implements R
     public TagAppender<T> tag(TagKey<T> tag) { return super.tag(tag); }
 
     @Override
-    public Tag.Builder getOrCreateRawBuilder(TagKey<T> tag) { return super.getOrCreateRawBuilder(tag); }
+    public TagBuilder getOrCreateRawBuilder(TagKey<T> tag) { return super.getOrCreateRawBuilder(tag); }
 }

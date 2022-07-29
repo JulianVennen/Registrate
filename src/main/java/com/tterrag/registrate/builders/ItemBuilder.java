@@ -15,7 +15,6 @@ import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
-import net.minecraft.core.Registry;
 import net.minecraft.tags.TagKey;
 import org.jetbrains.annotations.Nullable;
 
@@ -105,7 +104,7 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
     private NonNullSupplier<Supplier<ItemColor>> colorHandler;
     
     protected ItemBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, NonNullFunction<Item.Properties, T> factory) {
-        super(owner, parent, name, callback, Registry.ITEM_REGISTRY);
+        super(owner, parent, name, callback, ForgeRegistries.Keys.ITEMS);
         this.factory = factory;
     }
 
@@ -183,8 +182,8 @@ public class ItemBuilder<T extends Item, P> extends AbstractBuilder<Item, T, P, 
     }
     
     /**
-     * Assign the default translation, as specified by {@link RegistrateLangProvider#getAutomaticName(NonNullSupplier)}. This is the default, so it is generally not necessary to call, unless for undoing
-     * previous changes.
+     * Assign the default translation, as specified by {@link RegistrateLangProvider#getAutomaticName(NonNullSupplier, net.minecraft.resources.ResourceKey)}. This is the default, so it is generally
+     * not necessary to call, unless for undoing previous changes.
      * 
      * @return this {@link ItemBuilder}
      */

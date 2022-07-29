@@ -17,6 +17,7 @@ import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.Registry;
 import net.minecraft.data.BlockFamily;
+import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.HashCache;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -82,8 +83,8 @@ public class RegistrateRecipeProvider extends FabricRecipesProvider implements R
         return safeId(source.getId());
     }
 
-    public <R extends ItemLike> ResourceLocation safeId(R registryEntry) {
-        return Registry.ITEM.getKey(registryEntry.asItem());
+    public ResourceLocation safeId(ItemLike registryEntry) {
+        return safeId(Registry.ITEM.getKey(registryEntry.asItem()));
     }
 
     public String safeName(ResourceLocation id) {
@@ -94,8 +95,8 @@ public class RegistrateRecipeProvider extends FabricRecipesProvider implements R
         return safeName(source.getId());
     }
 
-//    public String safeName(IForgeRegistryEntry<?> registryEntry) {
-//        return safeName(registryEntry.getRegistryName());
+//    public String safeName(ItemLike registryEntry) {
+//        return safeName(ForgeRegistries.ITEMS.getKey(registryEntry.asItem()));
 //    }
 
     public static final int DEFAULT_SMELT_TIME = 200;
@@ -303,7 +304,7 @@ public class RegistrateRecipeProvider extends FabricRecipesProvider implements R
     // GENERATED START
 
 //    @Override
-//    public void saveAdvancement(HashCache p_126014_, JsonObject p_126015_, Path p_126016_) { super.saveAdvancement(p_126014_, p_126015_, p_126016_); }
+//    public void saveAdvancement(CachedOutput p_236368_, JsonObject p_236369_, Path p_236370_) { super.saveAdvancement(p_236368_, p_236369_, p_236370_); }
 
     public static void oreSmelting(Consumer<FinishedRecipe> p_176592_, List<ItemLike> p_176593_, ItemLike p_176594_, float p_176595_, int p_176596_, String p_176597_) { RecipeProvider.oreSmelting(p_176592_, p_176593_, p_176594_, p_176595_, p_176596_, p_176597_); }
 

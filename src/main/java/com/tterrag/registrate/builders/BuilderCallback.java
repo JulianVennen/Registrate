@@ -26,7 +26,7 @@ public interface BuilderCallback {
      * @param name
      *            The name of the entry
      * @param type
-     *            A {@link Class} representing the registry type
+     *            A {@link ResourceKey} representing the registry type
      * @param builder
      *            The builder performing this callback
      * @param factory
@@ -35,13 +35,7 @@ public interface BuilderCallback {
      *            A {@link NonNullFunction} which accepts the entry delegate and returns a {@link RegistryEntry} wrapper
      * @return A {@link RegistryEntry} that will supply the registered entry
      */
-    @Deprecated
-    <R, T extends R> RegistryEntry<T> accept(String name, Class<? super R> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> factory, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory);
-
-    @SuppressWarnings("null")
-    default <R, T extends R> RegistryEntry<T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> factory, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory) {
-        return accept(name, RegistryUtil.getRegistrationClass(type), builder, factory, entryFactory);
-    }
+    <R, T extends R> RegistryEntry<T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> factory, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory);
 
     /**
      * Accept a built entry, to later be constructed and registered. Uses the default {@link RegistryEntry#RegistryEntry(AbstractRegistrate, RegistryObject) RegistryEntry factory}.
@@ -60,21 +54,7 @@ public interface BuilderCallback {
      *            A {@link NonNullSupplier} that will create the entry
      * @return A {@link RegistryEntry} that will supply the registered entry
      */
-    default <R, T extends R> RegistryEntry<T> accept(String name, Class<? super R> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> factory) {
+    default <R, T extends R> RegistryEntry<T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> factory) {
         return accept(name, type, builder, factory, delegate -> new RegistryEntry<>(builder.getOwner(), delegate));
-    }
-
-    @FunctionalInterface
-    public interface NewBuilderCallback extends BuilderCallback {
-
-        @SuppressWarnings("null")
-        @Deprecated
-        @Override
-        default <R, T extends R> RegistryEntry<T> accept(String name, Class<? super R> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> factory, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory) {
-            return accept(name, (ResourceKey<? extends Registry<R>>) RegistryUtil.getRegistry(type).key(), builder, factory, entryFactory);
-        }
-
-        @Override
-        <R, T extends R> RegistryEntry<T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> factory, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory);
     }
 }

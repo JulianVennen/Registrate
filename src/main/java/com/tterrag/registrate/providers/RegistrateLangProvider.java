@@ -17,8 +17,8 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.Registry;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.HashCache;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -76,24 +76,13 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
                 .collect(Collectors.joining(" "));
     }
     
-    public String getAutomaticName(NonNullSupplier<?> sup) {
-        if(sup.get() instanceof Block block)
-            return RegistrateLangProvider.toEnglishName(Registry.BLOCK.getKey(block).getPath());
-        if(sup.get() instanceof Item item)
-            return  RegistrateLangProvider.toEnglishName(Registry.ITEM.getKey(item).getPath());
-        if(sup.get() instanceof Enchantment enchantment)
-            return  RegistrateLangProvider.toEnglishName(Registry.ENCHANTMENT.getKey(enchantment).getPath());
-        if(sup.get() instanceof EntityType entityType)
-            return  RegistrateLangProvider.toEnglishName(Registry.ENTITY_TYPE.getKey(entityType).getPath());
-        if(sup.get() instanceof BlockEntityType blockEntityType)
-            return  RegistrateLangProvider.toEnglishName(Registry.BLOCK_ENTITY_TYPE.getKey(blockEntityType).getPath());
-        if(sup.get() instanceof Fluid fluid)
-            return RegistrateLangProvider.toEnglishName(Registry.FLUID.getKey(fluid).getPath());
-        return "Registry not found, or implemented.";
+    @SuppressWarnings("unchecked")
+    public <T> String getAutomaticName(NonNullSupplier<? extends T> sup, ResourceKey<Registry<T>> registry) {
+        return toEnglishName(((Registry<Registry<T>>) Registry.REGISTRY).get(registry).getKey(sup.get()).getPath());
     }
 
     public void addBlock(NonNullSupplier<? extends Block> block) {
-        addBlock(block, getAutomaticName(block));
+        addBlock(block, getAutomaticName(block, Registry.BLOCK_REGISTRY));
     }
 
     public void addBlockWithTooltip(NonNullSupplier<? extends Block> block, String tooltip) {
@@ -107,7 +96,7 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
     }
 
     public void addItem(NonNullSupplier<? extends Item> item) {
-        addItem(item, getAutomaticName(item));
+        addItem(item, getAutomaticName(item, Registry.ITEM_REGISTRY));
     }
 
     public void addItemWithTooltip(NonNullSupplier<? extends Item> block, String name, List<@NonnullType String> tooltip) {
@@ -126,11 +115,16 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
     }
 
     public void add(CreativeModeTab tab, String name) {
-        add(((TranslatableComponent)tab.getDisplayName()).getKey(), name);
+        var contents = tab.getDisplayName().getContents();
+        if (contents instanceof TranslatableContents lang) {
+            add(lang.getKey(), name);
+        } else {
+            throw new IllegalArgumentException("Creative tab does not have a translatable name: " + tab.getDisplayName());
+        }
     }
 
     public void addEntityType(NonNullSupplier<? extends EntityType<?>> entity) {
-        addEntityType(entity, getAutomaticName(entity));
+        addEntityType(entity, getAutomaticName(entity, Registry.ENTITY_TYPE_REGISTRY));
     }
 
     // Automatic en_ud generation
@@ -185,7 +179,7 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
     }
 
     @Override
-    public void run(HashCache cache) throws IOException {
+    public void run(CachedOutput cache) throws IOException {
         super.run(cache);
         upsideDown.run(cache);
     }

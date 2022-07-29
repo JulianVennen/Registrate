@@ -63,13 +63,7 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
      */
     String getName();
     
-    @Deprecated
-    Class<? super R> getRegistryType();
-
-    @SuppressWarnings({"null", "unchecked"})
-    default ResourceKey<? extends Registry<R>> getRegistryKey() {
-        return (ResourceKey<? extends Registry<R>>) RegistryUtil.getRegistry(getRegistryType()).key();
-    }
+    ResourceKey<? extends Registry<R>> getRegistryKey();
 
     /**
      * Get the {@link RegistryEntry} representing the entry built by this builder. Cannot be called before the builder is built.
@@ -184,25 +178,6 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
     }
 
     /**
-     * Add a callback to be invoked when this entry is registered, but only after some other registry type has been registered as well. Can be called multiple times to add multiple callbacks.
-     * <p>
-     * Builders which have had this method used on them (or another method which calls this one, such as {@link EntityBuilder#spawnEgg(int, int)}), <strong>must</strong> be registered, via
-     * {@link #register()}, or errors will be thrown when these "dangling" register callbacks are discovered at register time.
-     *
-     * @param <OR>
-     *            The dependency registry type
-     * @param dependencyType
-     *            the base class for objects of the dependency registry. The callback will be invoked only after this registry has fired its registry events.
-     * @param callback
-     *            the callback to invoke
-     * @return this {@link Builder}
-     */
-    @Deprecated
-    default <OR> S onRegisterAfter(Class<? super OR> dependencyType, NonNullConsumer<? super T> callback) {
-        return onRegisterAfter(getOwner().<OR>getRegistryKeyByClass(dependencyType), callback);
-    }
-
-    /**
      * Apply a transformation to this {@link Builder}. Useful to apply helper methods within a fluent chain, e.g.
      * 
      * <pre>
@@ -232,8 +207,8 @@ public interface Builder<R, T extends R, P, S extends Builder<R, T, P, S>> exten
     }
 
     /**
-     * Register the entry and return the parent object. The {@link RegistryObject} will be created but not returned. It can be retrieved later with {@link AbstractRegistrate#get(Class)} or
-     * {@link AbstractRegistrate#get(String, Class)}.
+     * Register the entry and return the parent object. The {@link RegistryObject} will be created but not returned. It can be retrieved later with {@link AbstractRegistrate#get(ResourceKey)} or
+     * {@link AbstractRegistrate#get(String, ResourceKey)}.
      * 
      * @return the parent object
      */
