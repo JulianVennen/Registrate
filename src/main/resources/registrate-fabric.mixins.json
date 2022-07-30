@@ -9,7 +9,6 @@
     "accessor.BlockEntityRenderersAccessor",
     "accessor.FluidBlockAccessor",
     "accessor.LootContextParamSetsAccessor",
-    "accessor.LootTableProviderAccessor",
     "accessor.SpawnEggItemAccessor",
     "accessor.SpawnPlacementsAccessor"
   ],

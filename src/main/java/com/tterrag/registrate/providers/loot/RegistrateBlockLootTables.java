@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import com.tterrag.registrate.AbstractRegistrate;
 
+import lombok.RequiredArgsConstructor;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider;
 import net.minecraft.core.Registry;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;

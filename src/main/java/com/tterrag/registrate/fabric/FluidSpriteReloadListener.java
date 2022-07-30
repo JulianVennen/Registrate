@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.minecraft.world.inventory.InventoryMenu;
 
 public class FluidSpriteReloadListener implements IdentifiableResourceReloadListener, ResourceManagerReloadListener {
 	public static final ResourceLocation ID = new ResourceLocation("registrate", "fluid_sprites");
@@ -29,7 +30,7 @@ public class FluidSpriteReloadListener implements IdentifiableResourceReloadList
 	@Override
 	public void onResourceManagerReload(ResourceManager manager) {
 		// Fluid rendering always uses the block atlas
-		Function<ResourceLocation, TextureAtlasSprite> atlas = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS);
+		Function<ResourceLocation, TextureAtlasSprite> atlas = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS);
 		for (ResourceLocation id : callbacks.keySet()) {
 			TextureAtlasSprite sprite = atlas.apply(id);
 			for (Consumer<TextureAtlasSprite> consumer : callbacks.get(id)) {

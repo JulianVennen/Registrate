@@ -1,6 +1,7 @@
 package com.tterrag.registrate.util.entry;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import com.tterrag.registrate.AbstractRegistrate;
 
@@ -36,13 +37,14 @@ public class FluidEntry<T extends SimpleFlowableFluid> extends RegistryEntry<T> 
         return (S) get().getSource();
     }
 
-    public FluidType getType() {
-        return get().getFluidType();
-    }
-
     @SuppressWarnings({ "unchecked", "null" })
     public <B extends Block> Optional<B> getBlock() {
         return (Optional<B>) Optional.ofNullable(block).map(RegistryEntry::get);
+    }
+
+    @Override
+    public RegistryEntry<T> filter(Predicate<? super T> predicate) {
+        return super.filter(predicate);
     }
 
     @SuppressWarnings({ "unchecked", "null" })

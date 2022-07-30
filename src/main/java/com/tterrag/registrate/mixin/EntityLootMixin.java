@@ -52,7 +52,8 @@ public class EntityLootMixin {
 			slice = @Slice(
 					from = @At(
 							value = "INVOKE",
-							target = "Lcom/google/common/collect/Sets;newHashSet()Ljava/util/HashSet;"
+							target = "Lcom/google/common/collect/Sets;newHashSet()Ljava/util/HashSet;",
+							remap = false
 					)
 			),
 			at = @At("STORE")

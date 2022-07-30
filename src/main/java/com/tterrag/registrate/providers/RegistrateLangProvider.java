@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import com.tterrag.registrate.fabric.LanguageProvider;
+import net.minecraftforge.common.data.LanguageProvider;
 import net.fabricmc.api.EnvType;
 import net.minecraft.data.CachedOutput;
 import org.apache.commons.lang3.StringUtils;

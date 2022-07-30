@@ -146,8 +146,8 @@ public abstract class SimpleFlowableFluid extends FlowingFluid {
 		}
 	}
 
-	public static class Still extends SimpleFlowableFluid {
-		public Still(Properties properties) {
+	public static class Source extends SimpleFlowableFluid {
+		public Source(Properties properties) {
 			super(properties);
 		}
 
@@ -173,7 +173,7 @@ public abstract class SimpleFlowableFluid extends FlowingFluid {
 		private float blastResistance = 1;
 		private int tickRate = 5;
 
-		public Properties(Supplier<? extends Fluid> still, Supplier<? extends Fluid> flowing, FluidData.Builder attributes) {
+		public Properties(Supplier<? extends Fluid> still, Supplier<? extends Fluid> flowing) {
 			this.still = still;
 			this.flowing = flowing;
 		}

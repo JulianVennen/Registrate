@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "testmod",
+  "version": "1.0.0",
+  "name": "Test Mod",
+  "description": "Test Mod for Registrate Fabric",
+  "authors": [
+    "tterrag1098",
+	"Pepper_Bell",
+    "AlphaMode",
+    "TropheusJ"
+  ],
+  "contact": {
+    "sources": "https://github.com/Fabricators-of-Create/Registrate-Refabricated"
+  },
+
+  "license": "MPL-2.0",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.tterrag.registrate.test.mod.TestModInit"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": ">=0.12.10",
+    "fabric": "*"
+  },
+
+  "custom": {
+    "modmenu": {
+      "badges": [ "library" ]
+    }
+  }
+}

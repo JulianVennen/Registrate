@@ -1,7 +1,6 @@
 package com.tterrag.registrate.test.mod;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import com.tterrag.registrate.fabric.SimpleFlowableFluid;
 
@@ -18,6 +17,9 @@ import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonnullType;
 
+import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.FrameType;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
@@ -55,7 +57,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -77,12 +78,12 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
+import org.apache.http.config.RegistryBuilder;
 import org.jetbrains.annotations.Nullable;
 
-public class TestMod implements ModInitializer {
+public class TestMod {
 
-    @Override
-    public void onInitialize() {
+    public void init() {
         registrate.addRawLang("testmod.custom.lang", "Test");
         registrate.addLang("tooltip", testblock.getId(), "Egg.");
         registrate.addLang("item", testitem.getId(), "testextra", "Magic!");
@@ -104,6 +105,8 @@ public class TestMod implements ModInitializer {
         testblockitem.is(Items.STONE);
         testblockbe.is(BlockEntityType.CHEST);
         // testbiome.is(Feature.BAMBOO); // should not compile
+
+        registrate.register();
     }
 
     private class TestBlock extends Block implements EntityBlock {
@@ -199,7 +202,7 @@ public class TestMod implements ModInitializer {
 //        }
 //    }
 
-//    private static class TestCustomRegistryEntry {}
+    private static class TestCustomRegistryEntry {}
 
     private final Registrate registrate = Registrate.create("testmod").creativeModeTab(() -> FabricItemGroupBuilder.build(new ResourceLocation("testmod", "testmod"), () -> new ItemStack(Items.EGG)), "Test Mod");
     private final AtomicBoolean sawCallback = new AtomicBoolean();
@@ -224,7 +227,8 @@ public class TestMod implements ModInitializer {
             .block(TestBlock::new)
                 .properties(p -> p.noOcclusion())
                 .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
-                                prov.models().withExistingParent(ctx.getName(), new ResourceLocation("block/glass")).renderType(prov.mcLoc("cutout"))))
+                                prov.models().withExistingParent(ctx.getName(), new ResourceLocation("block/glass"))))
+            .addLayer(() -> () -> RenderType.cutout())
                 .transform(TestMod::applyDiamondDrop)
                 .recipe((ctx, prov) -> {
                     ShapedRecipeBuilder.shaped(ctx.getEntry())
@@ -256,7 +260,7 @@ public class TestMod implements ModInitializer {
             .register();
 
     private final ItemEntry<BlockItem> testblockitem = (ItemEntry<BlockItem>) testblock.<Item, BlockItem>getSibling(Registry.ITEM_REGISTRY);
-    private final BlockEntityEntry<ChestBlockEntity> testblockbe = BlockEntityEntry.cast(testblock.getSibling(ForgeRegistries.BLOCK_ENTITY_TYPES));
+    private final BlockEntityEntry<ChestBlockEntity> testblockbe = BlockEntityEntry.cast(testblock.getSibling(Registry.BLOCK_ENTITY_TYPE_REGISTRY));
     
     @SuppressWarnings("deprecation")
     private final RegistryEntry<EntityType<TestEntity>> testentity = registrate.object("testentity")
@@ -279,24 +283,13 @@ public class TestMod implements ModInitializer {
             .register();
 
     private final FluidEntry<SimpleFlowableFluid.Flowing> testfluid = registrate.object("testfluid")
-            .fluid(new ResourceLocation("block/water_flow"), new ResourceLocation("block/lava_still"), (props, still, flow) -> new FluidType(props) {
-                // And now you can do custom behaviours.
+            .fluid(new ResourceLocation("block/water_flow"), new ResourceLocation("block/lava_still"))
+            .fluidAttributes(() -> new FluidVariantAttributeHandler() {
                 @Override
-                public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-                    consumer.accept(new IClientFluidTypeExtensions() {
-                        @Override
-                        public ResourceLocation getStillTexture() {
-                            return still;
-                        }
-
-                        @Override
-                        public ResourceLocation getFlowingTexture() {
-                            return flow;
-                        }
-                    });
+                public int getLuminance(FluidVariant variant) {
+                    return 15;
                 }
             })
-            .properties(p -> p.lightLevel(15).canConvertToSource(true))
             .renderType(RenderType::translucent)
             .noBucket()
 //            .bucket()
@@ -363,7 +356,7 @@ public class TestMod implements ModInitializer {
 //            .dimensionTypeCallback(t -> testdimensiontype = t)
 //            .register();
 
-    private final ResourceKey<Registry<TestCustomRegistryEntry>> CUSTOM_REGISTRY = registrate.makeRegistry("custom", () -> new RegistryBuilder<>());
+    private final ResourceKey<Registry<TestCustomRegistryEntry>> CUSTOM_REGISTRY = registrate.makeRegistry("custom", TestCustomRegistryEntry.class);
     private final RegistryEntry<TestCustomRegistryEntry> testcustom = registrate.object("testcustom")
             .simple(CUSTOM_REGISTRY, TestCustomRegistryEntry::new);
 

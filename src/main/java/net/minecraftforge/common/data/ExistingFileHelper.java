@@ -55,7 +55,7 @@ import static net.minecraft.client.Minecraft.RESOURCE_RELOAD_INITIAL_TASK;
 
 /**
  * Enables data providers to check if other data files currently exist. The
- * instance provided in the {@link GatherDataEvent} utilizes the standard
+ * instance provided in the {@link com.tterrag.registrate.fabric.GatherDataEvent} utilizes the standard
  * resources (via {@link VanillaPackResources}), forge's resources, as well as any
  * extra resource packs passed in via the {@code --existing} argument,
  * or mod resources via the {@code --existing-mod} argument.
@@ -152,7 +152,7 @@ public class ExistingFileHelper {
         if (!enable) {
             return true;
         }
-        return generated.get(packType).contains(loc) || getManager(packType).hasResource(loc);
+        return generated.get(packType).contains(loc) || getManager(packType).getResource(loc).isPresent();
     }
 
     /**
@@ -195,13 +195,13 @@ public class ExistingFileHelper {
      * <p>
      * This should be called by data providers immediately when a new data object is
      * created, i.e. not during
-     * {@link DataProvider#run(HashCache) run} but instead
+     * {@link DataProvider#run(net.minecraft.data.CachedOutput) run} but instead
      * when the "builder" (or whatever intermediate object) is created, such as a
      * {@link ModelBuilder}.
      * <p>
      * This represents a <em>promise</em> to generate the file later, since other
      * datagen may rely on this file existing.
-     * 
+     *
      * @param loc  the base location of the resource, e.g.
      *             {@code "minecraft:block/stone"}
      * @param type a {@link IResourceType} describing how to form the path to the
@@ -216,13 +216,13 @@ public class ExistingFileHelper {
      * <p>
      * This should be called by data providers immediately when a new data object is
      * created, i.e. not during
-     * {@link DataProvider#run(HashCache) run} but instead
+     * {@link DataProvider#run(net.minecraft.data.CachedOutput) run} but instead
      * when the "builder" (or whatever intermediate object) is created, such as a
      * {@link ModelBuilder}.
      * <p>
      * This represents a <em>promise</em> to generate the file later, since other
      * datagen may rely on this file existing.
-     * 
+     *
      * @param loc        the base location of the resource, e.g.
      *                   {@code "minecraft:block/stone"}
      * @param packType   the type of resources to check
@@ -241,7 +241,7 @@ public class ExistingFileHelper {
 
     @VisibleForTesting
     public Resource getResource(ResourceLocation loc, PackType packType) throws IOException {
-        return getManager(packType).getResource(loc);
+        return getManager(packType).getResource(loc).orElseThrow();
     }
 
     /**

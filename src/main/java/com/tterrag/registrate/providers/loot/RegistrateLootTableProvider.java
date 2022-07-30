@@ -1,7 +1,5 @@
 package com.tterrag.registrate.providers.loot;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -16,80 +14,37 @@ import com.mojang.datafixers.util.Pair;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.fabric.NonNullTriFunction;
 import com.tterrag.registrate.mixin.accessor.LootContextParamSetsAccessor;
-import com.tterrag.registrate.mixin.accessor.LootTableProviderAccessor;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateProvider;
-import com.tterrag.registrate.util.nullness.NonNullBiFunction;
 import com.tterrag.registrate.util.nullness.NonNullConsumer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 
-import net.minecraft.data.DataGenerator;
-import net.minecraft.data.DataProvider;
-import net.minecraft.data.HashCache;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.LootTables;
 import net.minecraft.world.level.storage.loot.ValidationContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 
 public class RegistrateLootTableProvider extends LootTableProvider implements RegistrateProvider {
 
-    @Override
-    public void run(HashCache pCache) {
-        Path path = ((LootTableProviderAccessor)this).getGenerator().getOutputFolder();
-        Map<ResourceLocation, LootTable> map = Maps.newHashMap();
-        this.getTables().forEach((p_124458_) -> {
-            p_124458_.getFirst().get().accept((p_176077_, p_176078_) -> {
-                if (map.put(p_176077_, p_176078_.setParamSet(p_124458_.getSecond()).build()) != null) {
-                    throw new IllegalStateException("Duplicate loot table " + p_176077_);
-                }
-            });
-        });
-        ValidationContext validationcontext = new ValidationContext(LootContextParamSets.ALL_PARAMS, (p_124465_) -> {
-            return null;
-        }, map::get);
-
-        validate(map, validationcontext);
-
-        Multimap<String, String> multimap = validationcontext.getProblems();
-        if (!multimap.isEmpty()) {
-            multimap.forEach((p_124446_, p_124447_) -> {
-                LootTableProviderAccessor.getLOGGER().warn("Found validation problem in {}: {}", p_124446_, p_124447_);
-            });
-            throw new IllegalStateException("Failed to validate loot tables, see logs");
-        } else {
-            map.forEach((p_124451_, p_124452_) -> {
-                Path path1 = LootTableProviderAccessor.callCreatePath(path, p_124451_);
-
-                try {
-                    DataProvider.save(LootTableProviderAccessor.getGSON(), pCache, LootTables.serialize(p_124452_), path1);
-                } catch (IOException ioexception) {
-                    LootTableProviderAccessor.getLOGGER().error("Couldn't save loot table {}", path1, ioexception);
-                }
-
-            });
-        }
-    }
-    
     public interface LootType<T extends RegistrateLootTables> {
-        
+
         static LootType<RegistrateBlockLootTables> BLOCK = register("block", LootContextParamSets.BLOCK, RegistrateBlockLootTables::new);
-//        static LootType<RegistrateEntityLootTables> ENTITY = register("entity", LootContextParamSets.ENTITY, RegistrateEntityLootTables::new);
+        static LootType<RegistrateEntityLootTables> ENTITY = register("entity", LootContextParamSets.ENTITY, RegistrateEntityLootTables::new);
 
         T getLootCreator(AbstractRegistrate<?> parent, Consumer<T> callback, FabricDataGenerator generator);
-        
+
         LootContextParamSet getLootSet();
-        
+
         static <T extends RegistrateLootTables> LootType<T> register(String name, LootContextParamSet set, NonNullTriFunction<AbstractRegistrate, Consumer<T>, FabricDataGenerator, T> factory) {
             LootType<T> type = new LootType<T>() {
                 @Override
                 public T getLootCreator(AbstractRegistrate<?> parent, Consumer<T> callback, FabricDataGenerator generator) {
                     return factory.apply(parent, callback, generator);
                 }
-                
+
                 @Override
                 public LootContextParamSet getLootSet() {
                     return set;
@@ -107,10 +62,12 @@ public class RegistrateLootTableProvider extends LootTableProvider implements Re
     private final Multimap<LootType<?>, Consumer<? super RegistrateLootTables>> specialLootActions = HashMultimap.create();
     private final Multimap<LootContextParamSet, Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>> lootActions = HashMultimap.create();
     private final Set<RegistrateLootTables> currentLootCreators = new HashSet<>();
+    private final FabricDataGenerator dataGenerator;
 
-    public RegistrateLootTableProvider(AbstractRegistrate<?> parent, DataGenerator dataGeneratorIn) {
+    public RegistrateLootTableProvider(AbstractRegistrate<?> parent, FabricDataGenerator dataGeneratorIn) {
         super(dataGeneratorIn);
         this.parent = parent;
+        this.dataGenerator = dataGeneratorIn;
     }
 
     @Override
@@ -136,10 +93,10 @@ public class RegistrateLootTableProvider extends LootTableProvider implements Re
     public void addLootAction(LootContextParamSet set, Consumer<BiConsumer<ResourceLocation, LootTable.Builder>> action) {
         this.lootActions.put(set, action);
     }
-    
+
     private Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>> getLootCreator(AbstractRegistrate<?> parent, LootType<?> type) {
         return () -> {
-            RegistrateLootTables creator = type.getLootCreator(parent, cons -> specialLootActions.get(type).forEach(c -> c.accept(cons)), (FabricDataGenerator) ((LootTableProviderAccessor)this).getGenerator());
+            RegistrateLootTables creator = type.getLootCreator(parent, cons -> specialLootActions.get(type).forEach(c -> c.accept(cons)), dataGenerator);
             currentLootCreators.add(creator);
             return creator;
         };

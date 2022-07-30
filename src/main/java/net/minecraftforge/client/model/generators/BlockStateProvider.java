@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import net.minecraft.data.CachedOutput;
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.core.Registry;
@@ -95,15 +96,19 @@ public abstract class BlockStateProvider implements DataProvider {
         this.generator = gen;
         this.modid = modid;
         this.blockModels = new BlockModelProvider(gen, modid, exFileHelper) {
+            @Override public void run(CachedOutput p_236071_) throws IOException {}
+
             @Override protected void registerModels() {}
         };
         this.itemModels = new ItemModelProvider(gen, modid, this.blockModels.existingFileHelper) {
             @Override protected void registerModels() {}
+
+            @Override public void run(CachedOutput p_236071_) throws IOException {}
         };
     }
 
     @Override
-    public void run(HashCache cache) throws IOException {
+    public void run(CachedOutput cache) throws IOException {
         models().clear();
         itemModels().clear();
         registeredBlocks.clear();
@@ -556,13 +561,13 @@ public abstract class BlockStateProvider implements DataProvider {
         }, TrapDoorBlock.POWERED, TrapDoorBlock.WATERLOGGED);
     }
 
-    private void saveBlockState(HashCache cache, JsonObject stateJson, Block owner) {
+    private void saveBlockState(CachedOutput cache, JsonObject stateJson, Block owner) {
         ResourceLocation blockName = Preconditions.checkNotNull(getRegistryName(owner));
         Path mainOutput = generator.getOutputFolder();
         String pathSuffix = "assets/" + blockName.getNamespace() + "/blockstates/" + blockName.getPath() + ".json";
         Path outputPath = mainOutput.resolve(pathSuffix);
         try {
-            DataProvider.save(GSON, cache, stateJson, outputPath);
+            DataProvider.saveStable(cache, stateJson, outputPath);
         } catch (IOException e) {
             LOGGER.error("Couldn't save blockstate to {}", outputPath, e);
         }

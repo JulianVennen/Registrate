@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import com.tterrag.registrate.AbstractRegistrate;
 
 import lombok.RequiredArgsConstructor;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.minecraft.core.Registry;
 import net.minecraft.data.loot.EntityLoot;
 import net.minecraft.resources.ResourceLocation;
@@ -14,11 +15,16 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.storage.loot.LootTable;
 
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class RegistrateEntityLootTables extends EntityLoot implements RegistrateLootTables {
 
     private final AbstractRegistrate<?> parent;
     private final Consumer<RegistrateEntityLootTables> callback;
+
+    public RegistrateEntityLootTables(AbstractRegistrate<?> parent, Consumer<RegistrateEntityLootTables> callback, FabricDataGenerator dataGenerator) {
+        this.parent = parent;
+        this.callback = callback;
+    }
 
     // fabric: overrides handled by EntityLootMixin
 

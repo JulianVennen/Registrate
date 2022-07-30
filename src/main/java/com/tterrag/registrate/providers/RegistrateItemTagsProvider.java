@@ -16,7 +16,7 @@ public class RegistrateItemTagsProvider extends RegistrateTagsProvider<Item> {
 
     private final Function<TagKey<Block>, TagBuilder> builderLookup;
 
-    @SuppressWarnings({ "deprecation", "null" })
+    @SuppressWarnings({ "null" })
     public RegistrateItemTagsProvider(AbstractRegistrate<?> owner, ProviderType<RegistrateItemTagsProvider> type, String name, FabricDataGenerator generatorIn, RegistrateTagsProvider<Block> blockTags) {
         super(owner, type, name, generatorIn, Registry.ITEM);
         this.builderLookup = blockTags::getOrCreateRawBuilder;

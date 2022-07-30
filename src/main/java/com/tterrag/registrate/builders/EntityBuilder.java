@@ -8,14 +8,18 @@ import com.tterrag.registrate.fabric.RegistryObject;
 import com.tterrag.registrate.mixin.accessor.SpawnPlacementsAccessor;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
+import com.tterrag.registrate.providers.loot.RegistrateEntityLootTables;
+import com.tterrag.registrate.providers.loot.RegistrateLootTableProvider.LootType;
 import com.tterrag.registrate.util.entry.EntityEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
+import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 import com.tterrag.registrate.util.nullness.NonNullConsumer;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
@@ -90,7 +94,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
 
 
     protected EntityBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, EntityType.EntityFactory<T> factory, MobCategory classification) {
-        super(owner, parent, name, callback, ForgeRegistries.Keys.ENTITY_TYPES);
+        super(owner, parent, name, callback, Registry.ENTITY_TYPE_REGISTRY);
         this.builder = () -> FabricEntityTypeBuilder.create(classification, factory);
     }
 
@@ -249,17 +253,17 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
         return lang(EntityType::getDescriptionId, name);
     }
 
-//    /**
-//     * Configure the loot table for this entity. This is different than most data gen callbacks as the callback does not accept a {@link DataGenContext}, but instead a
-//     * {@link RegistrateEntityLootTables}, for creating specifically entity loot tables.
-//     *
-//     * @param cons
-//     *            The callback which will be invoked during entity loot table creation.
-//     * @return this {@link EntityBuilder}
-//     */
-//    public EntityBuilder<T, P> loot(NonNullBiConsumer<RegistrateEntityLootTables, EntityType<T>> cons) {
-//        return setData(ProviderType.LOOT, (ctx, prov) -> prov.addLootAction(LootType.ENTITY, tb -> cons.accept((RegistrateEntityLootTables) tb, ctx.getEntry())));
-//    }
+    /**
+     * Configure the loot table for this entity. This is different than most data gen callbacks as the callback does not accept a {@link DataGenContext}, but instead a
+     * {@link RegistrateEntityLootTables}, for creating specifically entity loot tables.
+     *
+     * @param cons
+     *            The callback which will be invoked during entity loot table creation.
+     * @return this {@link EntityBuilder}
+     */
+    public EntityBuilder<T, P> loot(NonNullBiConsumer<RegistrateEntityLootTables, EntityType<T>> cons) {
+        return setData(ProviderType.LOOT, (ctx, prov) -> prov.addLootAction(LootType.ENTITY, tb -> cons.accept((RegistrateEntityLootTables) tb, ctx.getEntry())));
+    }
 
     /**
      * Assign {@link TagKey}{@code s} to this entity. Multiple calls will add additional tags.

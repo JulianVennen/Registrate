@@ -10,7 +10,7 @@ plugins {
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
-version = "MC${minecraft_version}-${project.mod_version}"
+version = "${project.mod_version}-MC${minecraft_version}"
 group = "com.tterrag.registrate_fabric"
 archivesBaseName = "Registrate-Fabric"
 
@@ -53,6 +53,15 @@ task buildOrPublish {
     }
 }
 
+sourceSets {
+    testmod {
+        compileClasspath += main.compileClasspath
+        compileClasspath += main.output
+        runtimeClasspath += main.runtimeClasspath
+        runtimeClasspath += main.output
+    }
+}
+
 loom {
     accessWidenerPath = file("src/main/resources/registrate-fabric.accesswidener")
 
@@ -65,6 +74,18 @@ loom {
             vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
 
             runDir "build/datagen"
+        }
+        testmodClient {
+            client()
+            name "Testmod Client"
+            source sourceSets.testmod
+            runDir "run/test"
+        }
+        testmodServer {
+            server()
+            name "Testmod Server"
+            source sourceSets.testmod
+            runDir "run/test_server"
         }
     }
 }
