@@ -254,7 +254,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
      * @return this {@link FluidBuilder}
      */
     public FluidBuilder<T, P> defaultLang() {
-        return lang(f -> ((FluidData.FluidAttributes)f).getData().translationKey(), RegistrateLangProvider.toEnglishName(sourceName));
+        return lang(f -> Util.makeDescriptionId("fluid", Registry.FLUID.getKey(f)), RegistrateLangProvider.toEnglishName(sourceName));
     }
 
     /**
@@ -265,7 +265,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
      * @return this {@link FluidBuilder}
      */
     public FluidBuilder<T, P> lang(String name) {
-        return lang(f -> ((FluidData.FluidAttributes)f).getData().translationKey(), name);
+        return lang(f -> Util.makeDescriptionId("fluid", Registry.FLUID.getKey(f)), name);
     }
 
     /**
