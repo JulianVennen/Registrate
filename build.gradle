@@ -15,6 +15,7 @@ group = "com.tterrag.registrate_fabric"
 archivesBaseName = "Registrate-Fabric"
 
 repositories {
+//    mavenLocal()
     maven { url = 'https://repo.maven.apache.org/maven2' }
     maven { url = 'https://mvn.devos.one/snapshots' }
     maven { url = 'https://jitpack.io' }
@@ -33,7 +34,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     include(modImplementation(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
 
-    modImplementation(include("me.alphamode:ForgeTags:2.1"))
+    modImplementation(include("me.alphamode:ForgeTags:2.4"))
 
     implementation(include("com.github.LlamaLad7:MixinExtras:0.0.11"))
     annotationProcessor("com.github.LlamaLad7:MixinExtras:0.0.11")
