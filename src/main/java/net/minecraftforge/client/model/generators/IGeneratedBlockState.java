@@ -23,7 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.JsonObject;
 
 @VisibleForTesting
-public interface IGeneratedBlockstate {
+public interface IGeneratedBlockState {
 
     JsonObject toJson();
 }

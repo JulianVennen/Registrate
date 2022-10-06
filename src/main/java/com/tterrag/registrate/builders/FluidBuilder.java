@@ -322,7 +322,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         NonNullSupplier<T> supplier = asSupplier();
         return getOwner().<B, FluidBuilder<T, P>>block(this, sourceName, p -> factory.apply(supplier, p))
             .properties(p -> BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable())
-            .properties(p -> p.lightLevel(FluidHelper::fluidLuminanceFromBlockState))
+//            .properties(p -> p.lightLevel(FluidHelper::fluidLuminanceFromBlockState))
             .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), prov.models().getBuilder(sourceName)
                 .texture("particle", stillTexture)));
     }

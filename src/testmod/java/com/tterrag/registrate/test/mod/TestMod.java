@@ -95,6 +95,7 @@ public class TestMod {
                             new ResourceLocation("textures/gui/advancements/backgrounds/stone.png"), FrameType.TASK, true, true, false)
                     .save(adv, registrate.getModid() + ":root");
         });
+        registrate.register();
 
         if (!sawCallback.get()) {
             throw new IllegalStateException("Register callback not fired!");
@@ -105,8 +106,6 @@ public class TestMod {
         testblockitem.is(Items.STONE);
         testblockbe.is(BlockEntityType.CHEST);
         // testbiome.is(Feature.BAMBOO); // should not compile
-
-        registrate.register();
     }
 
     private class TestBlock extends Block implements EntityBlock {

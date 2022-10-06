@@ -1,20 +1,6 @@
 /*
- * Minecraft Forge
- * Copyright (c) 2016-2021.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation version 2.1
- * of the License.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Copyright (c) Forge Development LLC and contributors
+ * SPDX-License-Identifier: LGPL-2.1-only
  */
 
 package net.minecraftforge.client.model.generators;
@@ -33,7 +19,6 @@ import com.google.gson.GsonBuilder;
 
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.HashCache;
 import net.minecraft.data.DataProvider;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.resources.ResourceLocation;
@@ -217,6 +202,30 @@ public abstract class ModelProvider<T extends ModelBuilder<T>> implements DataPr
         return sideBottomTop(name, BLOCK_FOLDER + "/slab_top", side, bottom, top);
     }
 
+    public T button(String name, ResourceLocation texture) {
+        return singleTexture(name, BLOCK_FOLDER + "/button", texture);
+    }
+
+    public T buttonPressed(String name, ResourceLocation texture) {
+        return singleTexture(name, BLOCK_FOLDER + "/button_pressed", texture);
+    }
+
+    public T buttonInventory(String name, ResourceLocation texture) {
+        return singleTexture(name, BLOCK_FOLDER + "/button_inventory", texture);
+    }
+
+    public T pressurePlate(String name, ResourceLocation texture) {
+        return singleTexture(name, BLOCK_FOLDER + "/pressure_plate_up", texture);
+    }
+
+    public T pressurePlateDown(String name, ResourceLocation texture) {
+        return singleTexture(name, BLOCK_FOLDER + "/pressure_plate_down", texture);
+    }
+
+    public T sign(String name, ResourceLocation texture) {
+        return getBuilder(name).texture("particle", texture);
+    }
+
     public T fencePost(String name, ResourceLocation texture) {
         return singleTexture(name, BLOCK_FOLDER + "/fence_post", texture);
     }
@@ -252,7 +261,7 @@ public abstract class ModelProvider<T extends ModelBuilder<T>> implements DataPr
     public T wallSide(String name, ResourceLocation wall) {
         return singleTexture(name, BLOCK_FOLDER + "/template_wall_side", "wall", wall);
     }
-    
+
     public T wallSideTall(String name, ResourceLocation wall) {
         return singleTexture(name, BLOCK_FOLDER + "/template_wall_side_tall", "wall", wall);
     }
@@ -294,19 +303,35 @@ public abstract class ModelProvider<T extends ModelBuilder<T>> implements DataPr
     }
 
     public T doorBottomLeft(String name, ResourceLocation bottom, ResourceLocation top) {
-        return door(name, "door_bottom", bottom, top);
+        return door(name, "door_bottom_left", bottom, top);
+    }
+
+    public T doorBottomLeftOpen(String name, ResourceLocation bottom, ResourceLocation top) {
+        return door(name, "door_bottom_left_open", bottom, top);
     }
 
     public T doorBottomRight(String name, ResourceLocation bottom, ResourceLocation top) {
-        return door(name, "door_bottom_rh", bottom, top);
+        return door(name, "door_bottom_right", bottom, top);
+    }
+
+    public T doorBottomRightOpen(String name, ResourceLocation bottom, ResourceLocation top) {
+        return door(name, "door_bottom_right_open", bottom, top);
     }
 
     public T doorTopLeft(String name, ResourceLocation bottom, ResourceLocation top) {
-        return door(name, "door_top", bottom, top);
+        return door(name, "door_top_left", bottom, top);
+    }
+
+    public T doorTopLeftOpen(String name, ResourceLocation bottom, ResourceLocation top) {
+        return door(name, "door_top_left_open", bottom, top);
     }
 
     public T doorTopRight(String name, ResourceLocation bottom, ResourceLocation top) {
-        return door(name, "door_top_rh", bottom, top);
+        return door(name, "door_top_right", bottom, top);
+    }
+
+    public T doorTopRightOpen(String name, ResourceLocation bottom, ResourceLocation top) {
+        return door(name, "door_top_right_open", bottom, top);
     }
 
     public T trapdoorBottom(String name, ResourceLocation texture) {
@@ -346,7 +371,7 @@ public abstract class ModelProvider<T extends ModelBuilder<T>> implements DataPr
     }
 
     /**
-     * Gets a model builder that's not directly saved to disk. Meant for use in custom model loaders.
+     * {@return a model builder that's not directly saved to disk. Meant for use in custom model loaders.}
      */
     public T nested()
     {
@@ -358,7 +383,7 @@ public abstract class ModelProvider<T extends ModelBuilder<T>> implements DataPr
         ret.assertExistence();
         return ret;
     }
-    
+
     protected void clear() {
         generatedModels.clear();
     }

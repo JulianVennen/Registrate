@@ -15,7 +15,7 @@ group = "com.tterrag.registrate_fabric"
 archivesBaseName = "Registrate-Fabric"
 
 repositories {
-//    mavenLocal()
+    mavenLocal()
     maven { url = 'https://repo.maven.apache.org/maven2' }
     maven { url = 'https://mvn.devos.one/snapshots' }
     maven { url = 'https://jitpack.io' }
