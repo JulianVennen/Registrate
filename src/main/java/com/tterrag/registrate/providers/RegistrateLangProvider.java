@@ -1,23 +1,24 @@
 package com.tterrag.registrate.providers;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import net.minecraftforge.common.data.LanguageProvider;
+import com.tterrag.registrate.fabric.BaseLangProvider;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.api.EnvType;
 import net.minecraft.data.CachedOutput;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import org.apache.commons.lang3.StringUtils;
 
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
-import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.Registry;
-import net.minecraft.data.DataGenerator;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
@@ -26,31 +27,22 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 
-public class RegistrateLangProvider extends LanguageProvider implements RegistrateProvider {
+public class RegistrateLangProvider extends BaseLangProvider implements RegistrateProvider {
     
-    private static class AccessibleLanguageProvider extends LanguageProvider {
-
-        public AccessibleLanguageProvider(DataGenerator gen, String modid, String locale) {
-            super(gen, modid, locale);
+    private static class AccessibleLanguageProvider extends BaseLangProvider {
+        public AccessibleLanguageProvider(FabricDataGenerator gen, String locale) {
+            super(gen, locale);
         }
-
-        @Override
-        public void add(@Nullable String key, @Nullable String value) {
-            super.add(key, value);
-        }
-
-        @Override
-        protected void addTranslations() {}
     }
     
     private final AbstractRegistrate<?> owner;
     
     private final AccessibleLanguageProvider upsideDown;
 
-    public RegistrateLangProvider(AbstractRegistrate<?> owner, DataGenerator gen) {
-        super(gen, owner.getModid(), "en_us");
+    public RegistrateLangProvider(AbstractRegistrate<?> owner, FabricDataGenerator gen) {
+        super(gen, "en_us");
         this.owner = owner;
-        this.upsideDown = new AccessibleLanguageProvider(gen, owner.getModid(), "en_ud");
+        this.upsideDown = new AccessibleLanguageProvider(gen, "en_ud");
     }
 
     @Override
@@ -64,10 +56,11 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
     }
 
     @Override
-    protected void addTranslations() {
+    public void generateTranslations(TranslationBuilder translationBuilder) {
         owner.genData(ProviderType.LANG, this);
+        super.generateTranslations(translationBuilder);
     }
-    
+
     public static final String toEnglishName(String internalName) {
         return Arrays.stream(internalName.toLowerCase(Locale.ROOT).split("_"))
                 .map(StringUtils::capitalize)
@@ -181,4 +174,55 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
         super.run(cache);
         upsideDown.run(cache);
     }
+
+    // helper methods from forge
+
+    public void addBlock(Supplier<? extends Block> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(Block key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addItem(Supplier<? extends Item> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(Item key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addItemStack(Supplier<ItemStack> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(ItemStack key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addEnchantment(Supplier<? extends Enchantment> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(Enchantment key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addEffect(Supplier<? extends MobEffect> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(MobEffect key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
+    public void addEntityType(Supplier<? extends EntityType<?>> key, String name) {
+        add(key.get(), name);
+    }
+
+    public void add(EntityType<?> key, String name) {
+        add(key.getDescriptionId(), name);
+    }
+
 }
