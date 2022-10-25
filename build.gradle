@@ -2,6 +2,7 @@
 //file:noinspection GroovyAccessibility
 plugins {
     id "fabric-loom" version "1.0.+"
+    id "io.github.juuxel.loom-quiltflower" version "1.+" // Quiltflower, a better decompiler
     id "io.freefair.lombok" version "6.1.0-m3"
     id "maven-publish"
 }
