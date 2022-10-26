@@ -16,6 +16,7 @@ archivesBaseName = "Registrate-Fabric"
 
 repositories {
     mavenLocal()
+    maven { url = "https://maven.parchmentmc.org" }
     maven { url = "https://maven.quiltmc.org/repository/release" }
     maven { url = "https://repo.maven.apache.org/maven2" }
     maven { url = "https://mvn.devos.one/snapshots" }
