@@ -469,6 +469,16 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             });
         }
 
+        if (this.renderHandler == null) {
+            this.renderHandler = () -> new SimpleFluidRenderHandler(stillTexture, flowingTexture);
+            onRegister(this::registerRenderHandler);
+        }
+
+        ClientSpriteRegistryCallback.event(InventoryMenu.BLOCK_ATLAS).register((atlasTexture, registry) -> {
+            if (stillTexture != null) registry.register(stillTexture);
+            if (flowingTexture != null) registry.register(flowingTexture);
+        });
+
         if (defaultSource == Boolean.TRUE) {
             source(SimpleFlowableFluid.Source::new);
         }
