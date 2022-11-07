@@ -322,7 +322,10 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         NonNullSupplier<T> supplier = asSupplier();
         return getOwner().<B, FluidBuilder<T, P>>block(this, sourceName, p -> factory.apply(supplier, p))
             .properties(p -> BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable())
-            .properties(p -> p.lightLevel(FluidHelper::fluidLuminanceFromBlockState))
+                // fabric: luminance is fluid-sensitive, can't do this easily.
+                // default impl will try to get it from the fluid's block, thus causing a loop.
+                // if you want to do this, override getLuminance in FluidVariantAttributeHandler
+                //.properties(p -> p.lightLevel(blockState -> fluidType.get().getLightLevel()))
             .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), prov.models().getBuilder(sourceName)
                 .texture("particle", stillTexture)));
     }
