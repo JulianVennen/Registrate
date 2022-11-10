@@ -14,6 +14,11 @@ version = "${project.mod_version}-MC${minecraft_version}"
 group = "com.tterrag.registrate_fabric"
 archivesBaseName = "Registrate-Fabric"
 
+String buildNumber = System.getenv("GITHUB_RUN_NUMBER")
+String patch = buildNumber != null ? buildNumber : "99999"
+
+version = version.replace("<patch>", patch)
+
 repositories {
     mavenLocal()
     maven { url = "https://maven.parchmentmc.org" }
