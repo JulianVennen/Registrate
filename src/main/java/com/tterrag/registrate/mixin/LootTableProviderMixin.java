@@ -18,10 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -30,17 +27,18 @@ import java.util.function.Supplier;
 public class LootTableProviderMixin {
 	@ModifyReceiver(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/List;forEach(Ljava/util/function/Consumer;)V", remap = false))
 	private List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootContextParamSet>> registrate$runCustomGeneration(
-			List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, Builder>>>, LootContextParamSet>> subProviders) {
+			List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, Builder>>>, LootContextParamSet>> subProviders,
+			Consumer<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, Builder>>>, LootContextParamSet>> consumer) {
 		if ((Object) this instanceof RegistrateLootTableProvider registrate) {
 			return registrate.getTables();
 		}
 		return subProviders;
 	}
 
-	@ModifyExpressionValue(method = "run", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Sets;difference(Ljava/util/Set;Ljava/util/Set;)Lcom/google/common/collect/Sets$SetView;", remap = false))
+	@ModifyExpressionValue(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;", remap = false))
 	private Iterator<ResourceLocation> registrate$preventVanillaValidationReporting(Iterator<ResourceLocation> difference) {
 		if ((Object) this instanceof RegistrateLootTableProvider registrate) {
-			return new ArrayList<ResourceLocation>().iterator(); // empty, do nothing
+			return Collections.emptyIterator(); // empty, do nothing
 		}
 		return difference;
 	}
