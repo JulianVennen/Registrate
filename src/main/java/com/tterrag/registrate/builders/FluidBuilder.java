@@ -17,6 +17,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
+import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
 import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRenderHandler;
 import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
@@ -25,6 +27,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -109,11 +112,11 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     private final ResourceLocation stillTexture, flowingTexture;
     private final NonNullFunction<SimpleFlowableFluid.Properties, T> fluidFactory;
 
-    @Nullable
+    @Nullable // has sane defaults
     private NonNullSupplier<FluidVariantAttributeHandler> attributeHandler = null;
-    @Nullable
+    @Nullable // does not need a default, fapi default defers to renderHandler
     private NonNullSupplier<FluidVariantRenderHandler> variantRenderHandler = null;
-    @Nullable
+    @Nullable // default supplied in register
     private NonNullSupplier<FluidRenderHandler> renderHandler = null;
 
     @Nullable
@@ -322,7 +325,10 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         NonNullSupplier<T> supplier = asSupplier();
         return getOwner().<B, FluidBuilder<T, P>>block(this, sourceName, p -> factory.apply(supplier, p))
             .properties(p -> BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable())
-            .properties(p -> p.lightLevel(FluidHelper::fluidLuminanceFromBlockState))
+                // fabric: luminance is fluid-sensitive, can't do this easily.
+                // default impl will try to get it from the fluid's block, thus causing a loop.
+                // if you want to do this, override getLuminance in FluidVariantAttributeHandler
+                //.properties(p -> p.lightLevel(blockState -> fluidType.get().getLightLevel()))
             .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), prov.models().getBuilder(sourceName)
                 .texture("particle", stillTexture)));
     }
@@ -465,6 +471,16 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
                 FluidVariantAttributes.register(getSource(), handler);
             });
         }
+
+        if (this.renderHandler == null) {
+            this.renderHandler = () -> new SimpleFluidRenderHandler(stillTexture, flowingTexture);
+            onRegister(this::registerRenderHandler);
+        }
+
+        ClientSpriteRegistryCallback.event(InventoryMenu.BLOCK_ATLAS).register((atlasTexture, registry) -> {
+            if (stillTexture != null) registry.register(stillTexture);
+            if (flowingTexture != null) registry.register(flowingTexture);
+        });
 
         if (defaultSource == Boolean.TRUE) {
             source(SimpleFlowableFluid.Source::new);
