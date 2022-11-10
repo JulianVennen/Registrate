@@ -81,7 +81,7 @@ public class RegistrateLootTableProvider extends LootTableProvider implements Re
     }
     
     //@Override
-    protected void validate(Map<ResourceLocation, LootTable> map, ValidationContext validationresults) {
+    public void validate(Map<ResourceLocation, LootTable> map, ValidationContext validationresults) {
         currentLootCreators.forEach(c -> c.validate(map, validationresults));
     }
 
@@ -105,7 +105,7 @@ public class RegistrateLootTableProvider extends LootTableProvider implements Re
     private static final BiMap<ResourceLocation, LootContextParamSet> SET_REGISTRY = LootContextParamSetsAccessor.getREGISTRY();
     
 //    @Override
-    protected List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootContextParamSet>> getTables() {
+    public List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootContextParamSet>> getTables() {
         parent.genData(ProviderType.LOOT, this);
         currentLootCreators.clear();
         ImmutableList.Builder<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootContextParamSet>> builder = ImmutableList.builder();
