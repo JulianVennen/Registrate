@@ -153,6 +153,11 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         return this;
     }
 
+    /**
+     * Prevents Registrate from registering a {@link SimpleFluidRenderHandler} to a fluid.
+     *
+     * @return this {@link FluidBuilder}
+     */
     public FluidBuilder<T, P> disableDefaultRenderHandler() {
         this.disableDefaultHandler = true;
         return this;
@@ -439,7 +444,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             });
         }
 
-        if (this.renderHandler == null) {
+        if (this.renderHandler == null && !this.disableDefaultHandler) {
             setDefaultRenderHandler();
             onRegister(this::registerRenderHandler);
         }
