@@ -3,20 +3,18 @@ package com.tterrag.registrate.builders;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.tterrag.registrate.AbstractRegistrate;
-import com.tterrag.registrate.fabric.EnvExecutor;
-import com.tterrag.registrate.fabric.FluidHelper;
-import com.tterrag.registrate.fabric.RegistryObject;
-import com.tterrag.registrate.fabric.SimpleFlowableFluid;
+import com.tterrag.registrate.fabric.*;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 import com.tterrag.registrate.util.entry.FluidEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
-import com.tterrag.registrate.util.nullness.*;
+import com.tterrag.registrate.util.nullness.NonNullBiFunction;
+import com.tterrag.registrate.util.nullness.NonNullConsumer;
+import com.tterrag.registrate.util.nullness.NonNullFunction;
+import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
@@ -113,7 +111,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     @Nullable // has sane defaults
     private NonNullSupplier<FluidVariantAttributeHandler> attributeHandler = null;
     @Nullable // default supplied in register
-    private NonNullSupplier<RenderHandlerFactory> renderHandler = null;
+    private NonNullSupplier<FluidData.RenderHandlerFactory> renderHandler = null;
     private boolean disableDefaultHandler = false;
 
     @Nullable
@@ -165,9 +163,11 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
 
     protected void registerRenderHandler(T entry) {
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            final FluidRenderHandler handler = renderHandler.get().create(stillTexture, flowingTexture);
-            FluidRenderHandlerRegistry.INSTANCE.register(entry, handler);
-            FluidRenderHandlerRegistry.INSTANCE.register(entry.getSource(), handler);
+            FluidData.registerRenderHandler(renderHandler, entry, stillTexture, flowingTexture);
+            ClientSpriteRegistryCallback.event(InventoryMenu.BLOCK_ATLAS).register((atlasTexture, registry) -> {
+                if (stillTexture != null) registry.register(stillTexture);
+                if (flowingTexture != null) registry.register(flowingTexture);
+            });
         });
     }
 
@@ -449,11 +449,6 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             onRegister(this::registerRenderHandler);
         }
 
-        ClientSpriteRegistryCallback.event(InventoryMenu.BLOCK_ATLAS).register((atlasTexture, registry) -> {
-            if (stillTexture != null) registry.register(stillTexture);
-            if (flowingTexture != null) registry.register(flowingTexture);
-        });
-
         if (defaultSource == Boolean.TRUE) {
             source(SimpleFlowableFluid.Source::new);
         }
@@ -480,13 +475,8 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     protected void setDefaultRenderHandler() {
-        this.renderHandler = () -> (stillTexture, flowingTexture) -> {
-            final SimpleFluidRenderHandler handler = new SimpleFluidRenderHandler(stillTexture, flowingTexture, flowingTexture, -1);
-            return handler;
-        };
+        this.renderHandler = FluidData::createDefaultHandler;
     }
 
-    public interface RenderHandlerFactory {
-        FluidRenderHandler create(ResourceLocation stillTexture, ResourceLocation flowingTexture);
-    }
+
 }
