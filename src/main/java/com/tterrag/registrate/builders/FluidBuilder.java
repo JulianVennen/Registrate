@@ -19,8 +19,6 @@ import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
-import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRenderHandler;
-import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.minecraft.client.renderer.RenderType;
@@ -114,10 +112,9 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
 
     @Nullable // has sane defaults
     private NonNullSupplier<FluidVariantAttributeHandler> attributeHandler = null;
-    @Nullable // does not need a default, fapi default defers to renderHandler
-    private NonNullSupplier<FluidVariantRenderHandler> variantRenderHandler = null;
     @Nullable // default supplied in register
-    private NonNullSupplier<FluidRenderHandler> renderHandler = null;
+    private NonNullSupplier<RenderHandlerFactory> renderHandler = null;
+    private boolean disableDefaultHandler = false;
 
     @Nullable
     private Boolean defaultSource, defaultBlock, defaultBucket;
@@ -156,46 +153,16 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         return this;
     }
 
-    /**
-     * Register a {@link FluidVariantRenderHandler} for this fluid.
-     *
-     * @param handler a supplier for the handler that will be registered for this fluid
-     * @return this {@link FluidBuilder}
-     */
-    public FluidBuilder<T, P> fluidVariantRenderingAttributes(NonNullSupplier<FluidVariantRenderHandler> handler) {
-        if (variantRenderHandler == null) {
-            this.variantRenderHandler = handler;
-            onRegister(this::registerVariantRenderHandler);
-        }
+    public FluidBuilder<T, P> disableDefaultRenderHandler() {
+        this.disableDefaultHandler = true;
         return this;
-    }
-
-    /**
-     * Register a {@link FluidRenderHandler} for this fluid.
-     *
-     * @param handler a supplier for the handler that will be registered for this fluid
-     * @return this {@link FluidBuilder}
-     */
-    public FluidBuilder<T, P> fluidRenderingAttributes(NonNullSupplier<FluidRenderHandler> handler) {
-        if (renderHandler == null) {
-            this.renderHandler = handler;
-            onRegister(this::registerRenderHandler);
-        }
-        return this;
-    }
-
-    protected void registerVariantRenderHandler(T entry) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            FluidVariantRenderHandler handler = variantRenderHandler.get();
-            FluidVariantRendering.register(entry, handler);
-            FluidVariantRendering.register(getSource(), handler);
-        });
     }
 
     protected void registerRenderHandler(T entry) {
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            FluidRenderHandler handler = renderHandler.get();
-            FluidRenderHandlerRegistry.INSTANCE.register(getSource(), entry, handler);
+            final FluidRenderHandler handler = renderHandler.get().create(stillTexture, flowingTexture);
+            FluidRenderHandlerRegistry.INSTANCE.register(entry, handler);
+            FluidRenderHandlerRegistry.INSTANCE.register(entry.getSource(), handler);
         });
     }
 
@@ -473,7 +440,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         }
 
         if (this.renderHandler == null) {
-            this.renderHandler = () -> new SimpleFluidRenderHandler(stillTexture, flowingTexture);
+            setDefaultRenderHandler();
             onRegister(this::registerRenderHandler);
         }
 
@@ -505,5 +472,16 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     @Override
     protected RegistryEntry<T> createEntryWrapper(RegistryObject<T> delegate) {
         return new FluidEntry<>(getOwner(), delegate);
+    }
+
+    protected void setDefaultRenderHandler() {
+        this.renderHandler = () -> (stillTexture, flowingTexture) -> {
+            final SimpleFluidRenderHandler handler = new SimpleFluidRenderHandler(stillTexture, flowingTexture, flowingTexture, -1);
+            return handler;
+        };
+    }
+
+    public interface RenderHandlerFactory {
+        FluidRenderHandler create(ResourceLocation stillTexture, ResourceLocation flowingTexture);
     }
 }
