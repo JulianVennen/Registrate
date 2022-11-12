@@ -46,7 +46,7 @@ public class LootTableProviderMixin {
 	@WrapWithCondition(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0, remap = false))
 	private boolean registrate$preventVanillaValidation(Map<ResourceLocation, LootTable> map, BiConsumer<ResourceLocation, LootTable> consumer) {
 		// if registrate, don't validate
-		return !((Object) this instanceof RegistrateLootTableProvider registrate);
+		return !((Object) this instanceof RegistrateLootTableProvider);
 	}
 
 	@Inject(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0, remap = false), locals = LocalCapture.CAPTURE_FAILHARD)

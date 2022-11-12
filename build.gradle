@@ -73,6 +73,10 @@ sourceSets {
         compileClasspath += main.output
         runtimeClasspath += main.runtimeClasspath
         runtimeClasspath += main.output
+        resources {
+            srcDir("src/testmod/generated/resources")
+            exclude("src/testmod/generated/resources/.cache")
+        }
     }
 }
 
@@ -80,15 +84,6 @@ loom {
     accessWidenerPath = file("src/main/resources/registrate-fabric.accesswidener")
 
     runs {
-        datagen {
-            server()
-
-            name "Data Generation"
-            vmArg "-Dfabric-api.datagen"
-            vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
-
-            runDir "build/datagen"
-        }
         testmodClient {
             client()
             name "Testmod Client"
@@ -100,6 +95,16 @@ loom {
             name "Testmod Server"
             source sourceSets.testmod
             runDir "run/test_server"
+        }
+        testmodDatagen {
+            client()
+            name "Testmod Data Generation"
+            vmArg "-Dfabric-api.datagen"
+            vmArg "-Dfabric-api.datagen.output-dir=${file("src/testmod/generated/resources")}"
+            vmArg "-Dfabric-api.datagen.modid=testmod"
+            property "com.tterrag.registrate.existingData", file("src/testmod/resources").absolutePath
+            source sourceSets.testmod
+            runDir "run/datagen"
         }
     }
 }

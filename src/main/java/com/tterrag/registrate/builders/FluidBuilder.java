@@ -14,6 +14,7 @@ import com.tterrag.registrate.util.entry.FluidEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.*;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
@@ -114,17 +115,13 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
 
     @Nullable // has sane defaults
     private NonNullSupplier<FluidVariantAttributeHandler> attributeHandler = null;
-    @Nullable // does not need a default, fapi default defers to renderHandler
-    private NonNullSupplier<FluidVariantRenderHandler> variantRenderHandler = null;
-    @Nullable // default supplied in register
-    private NonNullSupplier<FluidRenderHandler> renderHandler = null;
 
     @Nullable
     private Boolean defaultSource, defaultBlock, defaultBucket;
 
     private NonNullConsumer<SimpleFlowableFluid.Properties> fluidProperties;
 
-    private @Nullable Supplier<RenderType> layer = null;
+    private @Nullable Supplier<Supplier<RenderType>> layer = null;
 
     @Nullable
     private NonNullSupplier<? extends SimpleFlowableFluid> source;
@@ -154,49 +151,6 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             this.attributeHandler = handler;
         }
         return this;
-    }
-
-    /**
-     * Register a {@link FluidVariantRenderHandler} for this fluid.
-     *
-     * @param handler a supplier for the handler that will be registered for this fluid
-     * @return this {@link FluidBuilder}
-     */
-    public FluidBuilder<T, P> fluidVariantRenderingAttributes(NonNullSupplier<FluidVariantRenderHandler> handler) {
-        if (variantRenderHandler == null) {
-            this.variantRenderHandler = handler;
-            onRegister(this::registerVariantRenderHandler);
-        }
-        return this;
-    }
-
-    /**
-     * Register a {@link FluidRenderHandler} for this fluid.
-     *
-     * @param handler a supplier for the handler that will be registered for this fluid
-     * @return this {@link FluidBuilder}
-     */
-    public FluidBuilder<T, P> fluidRenderingAttributes(NonNullSupplier<FluidRenderHandler> handler) {
-        if (renderHandler == null) {
-            this.renderHandler = handler;
-            onRegister(this::registerRenderHandler);
-        }
-        return this;
-    }
-
-    protected void registerVariantRenderHandler(T entry) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            FluidVariantRenderHandler handler = variantRenderHandler.get();
-            FluidVariantRendering.register(entry, handler);
-            FluidVariantRendering.register(getSource(), handler);
-        });
-    }
-
-    protected void registerRenderHandler(T entry) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            FluidRenderHandler handler = renderHandler.get();
-            FluidRenderHandlerRegistry.INSTANCE.register(getSource(), entry, handler);
-        });
     }
 
     /**
@@ -233,9 +187,9 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         return lang(FluidHelper::getDescriptionId, name);
     }
 
-    public FluidBuilder<T, P> renderType(Supplier<RenderType> layer) {
+    public FluidBuilder<T, P> renderType(Supplier<Supplier<RenderType>> layer) {
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            Preconditions.checkArgument(RenderType.chunkBufferLayers().contains(layer.get()), "Invalid render type: " + layer);
+            Preconditions.checkArgument(RenderType.chunkBufferLayers().contains(layer.get().get()), "Invalid render type: " + layer);
         });
 
         if (this.layer == null) {
@@ -248,7 +202,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     protected void registerRenderType(T entry) {
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
             if (this.layer != null) {
-                RenderType layer = this.layer.get();
+                RenderType layer = this.layer.get().get();
                 BlockRenderLayerMap.INSTANCE.putFluids(layer, entry, getSource());
             }
         });
@@ -454,6 +408,11 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         return fluidFactory.apply(makeProperties());
     }
 
+    @Environment(EnvType.CLIENT)
+    protected void registerDefaultRenderer(T flowing) {
+        FluidRenderHandlerRegistry.INSTANCE.register(getSource(), flowing, new SimpleFluidRenderHandler(stillTexture, flowingTexture));
+    }
+
     /**
      * {@inheritDoc}
      * <p>
@@ -472,15 +431,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
             });
         }
 
-        if (this.renderHandler == null) {
-            this.renderHandler = () -> new SimpleFluidRenderHandler(stillTexture, flowingTexture);
-            onRegister(this::registerRenderHandler);
-        }
-
-        ClientSpriteRegistryCallback.event(InventoryMenu.BLOCK_ATLAS).register((atlasTexture, registry) -> {
-            if (stillTexture != null) registry.register(stillTexture);
-            if (flowingTexture != null) registry.register(flowingTexture);
-        });
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> onRegister(this::registerDefaultRenderer));
 
         if (defaultSource == Boolean.TRUE) {
             source(SimpleFlowableFluid.Source::new);

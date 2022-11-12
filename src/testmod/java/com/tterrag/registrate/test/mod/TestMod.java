@@ -17,7 +17,6 @@ import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonnullType;
 
-import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
 import net.minecraft.advancements.Advancement;
@@ -56,10 +55,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantment.Rarity;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
@@ -74,16 +70,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.functions.LootingEnchantFunction;
+import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.minecraft.world.phys.BlockHitResult;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
-import org.apache.http.config.RegistryBuilder;
 import org.jetbrains.annotations.Nullable;
 
-public class TestMod {
+public class TestMod implements ModInitializer {
 
-    public void init() {
+    @Override
+    public void onInitialize() {
         registrate.addRawLang("testmod.custom.lang", "Test");
         registrate.addLang("tooltip", testblock.getId(), "Egg.");
         registrate.addLang("item", testitem.getId(), "testextra", "Magic!");
@@ -203,7 +206,7 @@ public class TestMod {
 
     private static class TestCustomRegistryEntry {}
 
-    private final Registrate registrate = Registrate.create("testmod").creativeModeTab(() -> FabricItemGroupBuilder.build(new ResourceLocation("testmod", "testmod"), () -> new ItemStack(Items.EGG)), "Test Mod");
+    static final Registrate registrate = Registrate.create("testmod").creativeModeTab(() -> FabricItemGroupBuilder.build(new ResourceLocation("testmod", "testmod"), () -> new ItemStack(Items.EGG)), "Test Mod");
     private final AtomicBoolean sawCallback = new AtomicBoolean();
 
     private final RegistryEntry<Item> testitem = registrate.object("testitem")
@@ -212,13 +215,13 @@ public class TestMod {
                 .properties(p -> p.food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2f).build()))
                 .color(() -> () -> (stack, index) -> 0xFF0000FF)
                 .tag(ItemTags.BEDS)
-//                .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), new ResourceLocation("block/stone")))
+                .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), new ResourceLocation("block/stone")))
                 .register();
 
     private final EntityEntry<TestEntity> testduplicatename = registrate.object("testitem")
             .entity(TestEntity::new, MobCategory.CREATURE)
             .attributes(Pig::createAttributes)
-//            .loot((tb, e) -> tb.add(e, LootTable.lootTable()))
+            .loot((tb, e) -> tb.add(e, LootTable.lootTable()))
             .renderer(() -> PigRenderer::new)
             .register();
 
@@ -244,7 +247,7 @@ public class TestMod {
                 .color(() -> () -> (state, world, pos, index) -> 0xFFFF0000)
                 .item()
                     .color(() -> () -> (stack, index) -> 0xFFFF0000)
-//                    .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), new ResourceLocation("item/egg")))
+                    .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), new ResourceLocation("item/egg")))
                     .build()
                 .blockEntity(TestBlockEntity::new)
                     .renderer(() -> TestBlockEntityRenderer::new)
@@ -253,8 +256,8 @@ public class TestMod {
 
     private final BlockEntry<Block> magicItemModelTest = registrate.object("magic_item_model")
             .block(Block::new)
-//            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
-//                    prov.models().withExistingParent("block/subfolder/" + ctx.getName(), prov.mcLoc("block/gold_block"))))
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
+                    prov.models().withExistingParent("block/subfolder/" + ctx.getName(), prov.mcLoc("block/gold_block"))))
             .simpleItem()
             .register();
 
@@ -268,12 +271,12 @@ public class TestMod {
             .renderer(() -> PigRenderer::new)
             .spawnPlacement(SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Animal::checkAnimalSpawnRules)
             .defaultSpawnEgg(0xFF0000, 0x00FF00)
-//            .loot((prov, type) -> prov.add(type, LootTable.lootTable()
-//                    .withPool(LootPool.lootPool()
-//                            .setRolls(ConstantValue.exactly(1))
-//                            .add(LootItem.lootTableItem(Items.DIAMOND)
-//                                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))
-//                                    .apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0, 2)))))))
+            .loot((prov, type) -> prov.add(type, LootTable.lootTable()
+                    .withPool(LootPool.lootPool()
+                            .setRolls(ConstantValue.exactly(1))
+                            .add(LootItem.lootTableItem(Items.DIAMOND)
+                                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))
+                                    .apply(LootingEnchantFunction.lootingMultiplier(UniformGenerator.between(0, 2)))))))
             .tag(EntityTypeTags.RAIDERS)
             .register();
 
@@ -289,7 +292,7 @@ public class TestMod {
                     return 15;
                 }
             })
-            .renderType(RenderType::translucent)
+            .renderType(() -> RenderType::translucent)
             .noBucket()
 //            .bucket()
 //                .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.mcLoc("item/water_bucket")))

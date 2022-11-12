@@ -19,7 +19,10 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.tterrag.registrate.test.mod.TestModInit"
+      "com.tterrag.registrate.test.mod.TestMod"
+    ],
+    "fabric-datagen": [
+      "com.tterrag.registrate.test.mod.TestModDatagen"
     ]
   },
 
