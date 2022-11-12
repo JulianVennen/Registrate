@@ -16,12 +16,9 @@ import com.tterrag.registrate.util.nullness.*;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
-import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRenderHandler;
-import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.minecraft.client.renderer.RenderType;
@@ -173,7 +170,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
      * @return this {@link FluidBuilder}
      */
     public FluidBuilder<T, P> defaultLang() {
-        return lang(FluidHelper::getDescriptionId, RegistrateLangProvider.toEnglishName(sourceName));
+        return lang(RegistrateLangProvider.toEnglishName(sourceName));
     }
 
     /**
@@ -184,7 +181,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
      * @return this {@link FluidBuilder}
      */
     public FluidBuilder<T, P> lang(String name) {
-        return lang(FluidHelper::getDescriptionId, name);
+        return lang(flowing -> FluidHelper.getDescriptionId(flowing.getSource()), name);
     }
 
     public FluidBuilder<T, P> renderType(Supplier<Supplier<RenderType>> layer) {
