@@ -411,6 +411,10 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     @Environment(EnvType.CLIENT)
     protected void registerDefaultRenderer(T flowing) {
         FluidRenderHandlerRegistry.INSTANCE.register(getSource(), flowing, new SimpleFluidRenderHandler(stillTexture, flowingTexture));
+        ClientSpriteRegistryCallback.event(InventoryMenu.BLOCK_ATLAS).register((atlas, registry) -> {
+            registry.register(stillTexture);
+            registry.register(flowingTexture);
+        });
     }
 
     /**
