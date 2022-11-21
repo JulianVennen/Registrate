@@ -32,7 +32,7 @@ public class RegistrateTagsProvider<T> extends FabricTagProvider<T> implements R
     }
 
     @Override
-    public TagAppender<T> tag(TagKey<T> tag) { return super.tag(tag); }
+    public FabricTagBuilder<T> tag(TagKey<T> tag) { return super.getOrCreateTagBuilder(tag); }
 
     @Override
     public Tag.Builder getOrCreateRawBuilder(TagKey<T> tag) { return super.getOrCreateRawBuilder(tag); }
