@@ -102,9 +102,7 @@ loom {
             vmArg "-Dfabric-api.datagen"
             vmArg "-Dfabric-api.datagen.output-dir=${file("src/testmod/generated/resources")}"
             vmArg "-Dfabric-api.datagen.modid=testmod"
-            property "com.tterrag.registrate.existingData", file("src/testmod/resources").absolutePath
             source sourceSets.testmod
-            runDir "run/datagen"
         }
     }
 }
