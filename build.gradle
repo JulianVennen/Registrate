@@ -1,10 +1,10 @@
 //file:noinspection GroovyAssignabilityCheck
 //file:noinspection GroovyAccessibility
 plugins {
-    id 'fabric-loom' version '0.11-SNAPSHOT'
+    id "fabric-loom" version "1.0.+"
     id "io.freefair.lombok" version "6.1.0-m3"
-    id 'io.github.juuxel.loom-quiltflower' version '1.+' // Quiltflower, a better decompiler
-    id 'maven-publish'
+    id "io.github.juuxel.loom-quiltflower" version "1.+" // Quiltflower, a better decompiler
+    id "maven-publish"
 }
 
 sourceCompatibility = JavaVersion.VERSION_16
@@ -15,30 +15,42 @@ group = "com.tterrag.registrate_fabric"
 archivesBaseName = "Registrate-Fabric"
 
 repositories {
-    maven { url = 'https://repo.maven.apache.org/maven2' }
-    maven { url = 'https://mvn.devos.one/snapshots' }
-    maven { url = 'https://jitpack.io' }
+    mavenLocal()
+    maven { url = "https://maven.parchmentmc.org" }
+    maven { url = "https://maven.quiltmc.org/repository/release" }
+    maven { url = "https://repo.maven.apache.org/maven2" }
+    maven { url = "https://mvn.devos.one/snapshots" }
+    maven {
+        url = "https://jitpack.io"
+        content {
+            includeGroup("com.github.LlamaLad7")
+            includeGroup("com.github.Chocohead")
+        }
+    }
 }
 
 dependencies {
-    implementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
-    implementation 'org.jetbrains:annotations:20.1.0'
+    minecraft("com.mojang:minecraft:${project.minecraft_version}")
+    mappings(loom.layered {
+        it.mappings("org.quiltmc:quilt-mappings:${project.minecraft_version}+build.${project.qm_version}:intermediary-v2")
+        it.parchment("org.parchmentmc.data:parchment-${project.minecraft_version}:${project.parchment_version}@zip")
+        it.officialMojangMappings { nameSyntheticMembers = false }
+    })
+    modImplementation("net.fabricmc:fabric-loader:${project.loader_version}")
 
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
     include(modImplementation(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
 
+    modImplementation(include("io.github.fabricators_of_create:Porting-Lib:1.2.99999-beta+1.18.2"))
     modImplementation(include("me.alphamode:ForgeTags:2.1"))
 
-    implementation(include("com.github.LlamaLad7:MixinExtras:0.0.11"))
-    annotationProcessor("com.github.LlamaLad7:MixinExtras:0.0.11")
+    implementation(include("com.github.LlamaLad7:MixinExtras:0.1.1"))
+    annotationProcessor("com.github.LlamaLad7:MixinExtras:0.1.1")
 
-    compileOnly 'org.projectlombok:lombok:1.18.22'
+    compileOnly("org.projectlombok:lombok:1.18.22")
+
+    implementation(include("com.google.code.findbugs:jsr305:3.0.2"))
+    implementation("javax.annotation:javax.annotation-api:1.3.2")
 }
 
 task buildOrPublish {

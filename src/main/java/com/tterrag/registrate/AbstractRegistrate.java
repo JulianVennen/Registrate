@@ -10,7 +10,6 @@ import com.tterrag.registrate.builders.EnchantmentBuilder.EnchantmentFactory;
 import com.tterrag.registrate.builders.MenuBuilder.ForgeMenuFactory;
 import com.tterrag.registrate.builders.MenuBuilder.MenuFactory;
 import com.tterrag.registrate.builders.MenuBuilder.ScreenFactory;
-import com.tterrag.registrate.fabric.GatherDataEvent;
 import com.tterrag.registrate.fabric.RegistryObject;
 import com.tterrag.registrate.fabric.RegistryUtil;
 import com.tterrag.registrate.fabric.SimpleFlowableFluid;
@@ -24,6 +23,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Value;
 import lombok.extern.log4j.Log4j2;
+import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.fabric.impl.datagen.FabricDataGenHelper;
 import net.fabricmc.loader.api.FabricLoader;
@@ -52,6 +52,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.Message;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
@@ -153,7 +155,6 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      */
     protected AbstractRegistrate(String modid) {
         this.modid = modid;
-        GatherDataEvent.EVENT.register(this::onInitializeDataGenerator);
     }
     
     @SuppressWarnings("unchecked")
@@ -258,7 +259,14 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     @Nullable
     private RegistrateDataProvider provider;
 
-    public void onInitializeDataGenerator(FabricDataGenerator generator, ExistingFileHelper existingFileHelper) {
+    /**
+     * Setup this Registrate for Data Generation. Should be called from a {@link DataGeneratorEntrypoint}.
+     * An {@link ExistingFileHelper} should be created and provided.
+     * @see ExistingFileHelper#standard()
+     * @see ExistingFileHelper#withResources(Path...)
+     * @see ExistingFileHelper#ExistingFileHelper(Collection, Set, boolean, String, File)
+     */
+    public void setupDatagen(FabricDataGenerator generator, ExistingFileHelper existingFileHelper) {
         generator.addProvider(provider = new RegistrateDataProvider(this, modid, generator, existingFileHelper));
     }
 
