@@ -43,11 +43,11 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${project.loader_version}")
 
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
-    include(modImplementation(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
-    modImplementation(include("io.github.fabricators_of_create.Porting-Lib:tags:${project.porting_lib_version}")) { transitive = false }
-    modImplementation(include("io.github.fabricators_of_create.Porting-Lib:model_generators:${project.porting_lib_version}")) { transitive = false }
-    implementation(include("com.github.LlamaLad7:MixinExtras:0.1.1-rc.3"))
-    annotationProcessor("com.github.LlamaLad7:MixinExtras:0.1.1-rc.3")
+    modApi(include(fabricApi.module("fabric-data-generation-api-v1", project.fabric_version))) // include datagen api
+    modApi(include("io.github.fabricators_of_create.Porting-Lib:tags:${project.porting_lib_version}")) { transitive = false }
+    modApi(include("io.github.fabricators_of_create.Porting-Lib:model_generators:${project.porting_lib_version}")) { transitive = false }
+    implementation(include("com.github.LlamaLad7:MixinExtras:0.1.1"))
+    annotationProcessor("com.github.LlamaLad7:MixinExtras:0.1.1")
 
     compileOnly("org.projectlombok:lombok:1.18.22")
 
