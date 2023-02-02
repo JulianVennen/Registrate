@@ -185,10 +185,6 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     public FluidBuilder<T, P> renderType(Supplier<Supplier<RenderType>> layer) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            Preconditions.checkArgument(RenderType.chunkBufferLayers().contains(layer.get().get()), "Invalid render type: " + layer);
-        });
-
         if (this.layer == null) {
             onRegister(this::registerRenderType);
         }
@@ -197,12 +193,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     protected void registerRenderType(T entry) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            if (this.layer != null) {
-                RenderType layer = this.layer.get().get();
-                BlockRenderLayerMap.INSTANCE.putFluids(layer, entry, getSource());
-            }
-        });
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> BlockRenderLayerMap.INSTANCE.putFluids(layer.get().get(), entry, getSource()););
     }
 
     /**
