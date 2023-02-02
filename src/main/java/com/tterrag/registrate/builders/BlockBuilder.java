@@ -1,6 +1,5 @@
 package com.tterrag.registrate.builders;
 
-import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
@@ -32,8 +31,6 @@ import net.minecraftforge.client.model.generators.BlockStateProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -87,7 +84,7 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
     
     private NonNullSupplier<BlockBehaviour.Properties> initialProperties;
     private NonNullFunction<BlockBehaviour.Properties, BlockBehaviour.Properties> propertiesCallback = NonNullUnaryOperator.identity();
-    private List<Supplier<Supplier<RenderType>>> renderLayers = new ArrayList<>(1);
+    private Supplier<Supplier<RenderType>> renderType;
     
     @Nullable
     private NonNullSupplier<Supplier<BlockColor>> colorHandler;
@@ -165,32 +162,16 @@ public class BlockBuilder<T extends Block, P> extends AbstractBuilder<Block, T, 
         return this;
     }
 
-    @SuppressWarnings("deprecation")
-    public BlockBuilder<T, P> addLayer(Supplier<Supplier<RenderType>> layer) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            Preconditions.checkArgument(RenderType.chunkBufferLayers().contains(layer.get().get()), "Invalid block layer: " + layer);
-        });
-        if (this.renderLayers.isEmpty()) {
+    public BlockBuilder<T, P> addLayer(Supplier<Supplier<RenderType>> type) {
+        if (renderType == null) {
             onRegister(this::registerLayers);
         }
-        this.renderLayers.add(layer);
+        renderType = type;
         return this;
     }
 
     protected void registerLayers(T entry) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            if (renderLayers.size() == 1) {
-                final RenderType layer = renderLayers.get(0).get().get();
-                BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
-            } else if (renderLayers.size() > 1) {
-                final Set<RenderType> layers = renderLayers.stream()
-                        .map(s -> s.get().get())
-                        .collect(Collectors.toSet());
-                for(RenderType layer : layers)
-                    BlockRenderLayerMap.INSTANCE.putBlock(entry, layer);
-                //                ItemBlockRenderTypes.setRenderLayer(entry, layers::contains);
-            }
-        });
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> BlockRenderLayerMap.INSTANCE.putBlock(entry, renderType.get().get()));
     }
 
     /**

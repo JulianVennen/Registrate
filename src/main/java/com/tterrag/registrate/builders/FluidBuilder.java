@@ -525,9 +525,6 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     private int color = -1;
 
     public FluidBuilder<T, P> layer(Supplier<Supplier<RenderType>> layer) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
-            Preconditions.checkArgument(RenderType.chunkBufferLayers().contains(layer.get().get()), "Invalid block layer: " + layer);
-        });
         if (this.renderLayer == null) {
             onRegister(this::registerLayer);
         }
