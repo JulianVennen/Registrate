@@ -193,7 +193,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     }
 
     protected void registerRenderType(T entry) {
-        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> BlockRenderLayerMap.INSTANCE.putFluids(layer.get().get(), entry, getSource()););
+        EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> BlockRenderLayerMap.INSTANCE.putFluids(layer.get().get(), entry, getSource()));
     }
 
     /**
