@@ -155,7 +155,8 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
             throw new IllegalStateException("Cannot configure attributes more than once");
         }
         attributesConfigured = true;
-        FabricDefaultAttributeRegistry.register((EntityType<? extends LivingEntity>) getEntry(), attributes.get());
+        //noinspection rawtypes,ConstantConditions
+        onRegister(type -> FabricDefaultAttributeRegistry.register((EntityType) type, attributes.get()));
         return this;
     }
 
