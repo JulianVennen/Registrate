@@ -77,7 +77,7 @@ public class RegistrateLootTableProvider extends LootTableProvider implements Re
     public interface LootType<T extends RegistrateLootTables> {
         
         static LootType<RegistrateBlockLootTables> BLOCK = register("block", LootContextParamSets.BLOCK, RegistrateBlockLootTables::new);
-//        static LootType<RegistrateEntityLootTables> ENTITY = register("entity", LootContextParamSets.ENTITY, RegistrateEntityLootTables::new);
+        static LootType<RegistrateEntityLootTables> ENTITY = register("entity", LootContextParamSets.ENTITY, RegistrateEntityLootTables::new);
 
         T getLootCreator(AbstractRegistrate<?> parent, Consumer<T> callback, FabricDataGenerator generator);
         
