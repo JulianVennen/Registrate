@@ -42,7 +42,7 @@ public class RegistrateEntityLootTables extends SimpleFabricLootTableProvider im
     }
 
     public void add(EntityType<?> type, LootTable.Builder table) {
-        entries.put(Registry.ENTITY_TYPE.getKey(type), table);
+        entries.put(type.getDefaultLootTable(), table);
     }
 
     public void add(ResourceLocation id, LootTable.Builder table) {
