@@ -4,7 +4,6 @@
   "package": "com.tterrag.registrate.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "EntityLootMixin",
     "LootTableProviderMixin",
     "accessor.BlockEntityRenderersAccessor",
     "accessor.FluidBlockAccessor",
