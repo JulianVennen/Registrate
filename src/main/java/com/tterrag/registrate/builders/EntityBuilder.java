@@ -6,6 +6,7 @@ import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.fabric.EnvExecutor;
 import com.tterrag.registrate.fabric.RegistryObject;
 import com.tterrag.registrate.mixin.accessor.SpawnPlacementsAccessor;
+import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.loot.RegistrateEntityLootTables;
@@ -154,7 +155,8 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
             throw new IllegalStateException("Cannot configure attributes more than once");
         }
         attributesConfigured = true;
-        this.onRegister(entry -> FabricDefaultAttributeRegistry.register((EntityType<? extends LivingEntity>) entry, attributes.get()));
+        //noinspection rawtypes,ConstantConditions
+        onRegister(type -> FabricDefaultAttributeRegistry.register((EntityType) type, attributes.get()));
         return this;
     }
 
