@@ -10,11 +10,13 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Lists;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.DebugMarkers;
 import com.tterrag.registrate.util.nullness.NonnullType;
-
 import lombok.extern.log4j.Log4j2;
+
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.HashCache;
@@ -24,23 +26,31 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 @Log4j2
 public class RegistrateDataProvider implements DataProvider {
 
     @SuppressWarnings("null")
     static final BiMap<String, ProviderType<?>> TYPES = HashBiMap.create();
-    
+
     public static @Nullable String getTypeName(ProviderType<?> type) {
         return TYPES.inverse().get(type);
     }
 
     private final String mod;
     private final Map<ProviderType<?>, RegistrateProvider> subProviders = new LinkedHashMap<>();
+    private final CompletableFuture<HolderLookup.Provider> registriesLookup;
 
     record DataInfo(FabricDataGenerator generator, ExistingFileHelper helper) {}
 
     public RegistrateDataProvider(AbstractRegistrate<?> parent, String modid, FabricDataGenerator generator, ExistingFileHelper helper) {
         this.mod = modid;
+        this.registriesLookup = event.getLookupProvider();
+
         EnumSet<EnvType> sides = EnumSet.noneOf(EnvType.class);
 //        if (event.includeServer()) {
             sides.add(EnvType.SERVER);
@@ -48,7 +58,6 @@ public class RegistrateDataProvider implements DataProvider {
 //        if (event.includeClient()) {
             sides.add(EnvType.CLIENT);
 //        }
-        
         log.debug(DebugMarkers.DATA, "Gathering providers for sides: {}", sides);
         Map<ProviderType<?>, RegistrateProvider> known = new HashMap<>();
         for (String id : TYPES.keySet()) {
@@ -63,11 +72,17 @@ public class RegistrateDataProvider implements DataProvider {
     }
 
     @Override
-    public void run(CachedOutput cache) throws IOException {
-        for (Map.Entry<@NonnullType ProviderType<?>, RegistrateProvider> e : subProviders.entrySet()) {
-            log.debug(DebugMarkers.DATA, "Generating data for type: {}", getTypeName(e.getKey()));
-            e.getValue().run(cache);
-        }
+    public CompletableFuture<?> run(CachedOutput cache) {
+        return registriesLookup.thenCompose(provider -> {
+            var list = Lists.<CompletableFuture<?>>newArrayList();
+
+            for (Map.Entry<@NonnullType ProviderType<?>, RegistrateProvider> e : subProviders.entrySet()) {
+                log.debug(DebugMarkers.DATA, "Generating data for type: {}", getTypeName(e.getKey()));
+                list.add(e.getValue().run(cache));
+            };
+
+            return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new));
+        });
     }
 
     @Override

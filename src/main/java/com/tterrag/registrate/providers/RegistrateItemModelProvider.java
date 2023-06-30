@@ -3,8 +3,7 @@ package com.tterrag.registrate.providers;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
-import net.minecraft.core.Registry;
-import net.minecraft.data.DataGenerator;
+import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ItemLike;
 
@@ -18,8 +17,8 @@ public class RegistrateItemModelProvider extends ItemModelProvider implements Re
 
     private final AbstractRegistrate<?> parent;
 
-    public RegistrateItemModelProvider(AbstractRegistrate<?> parent, DataGenerator generator, ExistingFileHelper existingFileHelper) {
-        super(generator, parent.getModid(), existingFileHelper);
+    public RegistrateItemModelProvider(AbstractRegistrate<?> parent, PackOutput packOutput, ExistingFileHelper existingFileHelper) {
+        super(packOutput, parent.getModid(), existingFileHelper);
         this.parent = parent;
     }
 

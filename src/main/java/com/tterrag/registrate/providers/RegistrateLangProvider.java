@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
+import org.apache.commons.lang3.StringUtils;
 
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -27,29 +28,29 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 
-public class RegistrateLangProvider extends BaseLangProvider implements RegistrateProvider {
-    
-    private static class AccessibleLanguageProvider extends BaseLangProvider {
+public class RegistrateLangProvider extends LanguageProvider implements RegistrateProvider {
+
+    private static class AccessibleLanguageProvider extends LanguageProvider {
         public AccessibleLanguageProvider(FabricDataGenerator gen, String locale) {
             super(gen, locale);
         }
     }
-    
+
     private final AbstractRegistrate<?> owner;
-    
+
     private final AccessibleLanguageProvider upsideDown;
 
-    public RegistrateLangProvider(AbstractRegistrate<?> owner, FabricDataGenerator gen) {
-        super(gen, "en_us");
+    public RegistrateLangProvider(AbstractRegistrate<?> owner, PackOutput packOutput) {
+        super(packOutput, owner.getModid(), "en_us");
         this.owner = owner;
-        this.upsideDown = new AccessibleLanguageProvider(gen, "en_ud");
+        this.upsideDown = new AccessibleLanguageProvider(packOutput, "en_ud");
     }
 
     @Override
     public EnvType getSide() {
         return EnvType.CLIENT;
     }
-    
+
     @Override
     public String getName() {
         return "Lang (en_us/en_ud)";
@@ -66,14 +67,14 @@ public class RegistrateLangProvider extends BaseLangProvider implements Registra
                 .map(StringUtils::capitalize)
                 .collect(Collectors.joining(" "));
     }
-    
+
     @SuppressWarnings("unchecked")
     public <T> String getAutomaticName(NonNullSupplier<? extends T> sup, ResourceKey<Registry<T>> registry) {
-        return toEnglishName(((Registry<Registry<T>>) Registry.REGISTRY).get(registry).getKey(sup.get()).getPath());
+        return toEnglishName(((Registry<Registry<T>>) BuiltInRegistries.REGISTRY).get(registry).getKey(sup.get()).getPath());
     }
 
     public void addBlock(NonNullSupplier<? extends Block> block) {
-        addBlock(block, getAutomaticName(block, Registry.BLOCK_REGISTRY));
+        addBlock(block, getAutomaticName(block, Registries.BLOCK));
     }
 
     public void addBlockWithTooltip(NonNullSupplier<? extends Block> block, String tooltip) {
@@ -87,7 +88,7 @@ public class RegistrateLangProvider extends BaseLangProvider implements Registra
     }
 
     public void addItem(NonNullSupplier<? extends Item> item) {
-        addItem(item, getAutomaticName(item, Registry.ITEM_REGISTRY));
+        addItem(item, getAutomaticName(item, Registries.ITEM));
     }
 
     public void addItemWithTooltip(NonNullSupplier<? extends Item> block, String name, List<@NonnullType String> tooltip) {
@@ -115,7 +116,7 @@ public class RegistrateLangProvider extends BaseLangProvider implements Registra
     }
 
     public void addEntityType(NonNullSupplier<? extends EntityType<?>> entity) {
-        addEntityType(entity, getAutomaticName(entity, Registry.ENTITY_TYPE_REGISTRY));
+        addEntityType(entity, getAutomaticName(entity, Registries.ENTITY_TYPE));
     }
 
     // Automatic en_ud generation
@@ -170,9 +171,8 @@ public class RegistrateLangProvider extends BaseLangProvider implements Registra
     }
 
     @Override
-    public void run(CachedOutput cache) throws IOException {
-        super.run(cache);
-        upsideDown.run(cache);
+    public CompletableFuture<?> run(CachedOutput cache) {
+        return CompletableFuture.allOf(super.run(cache), upsideDown.run(cache));
     }
 
     // helper methods from forge

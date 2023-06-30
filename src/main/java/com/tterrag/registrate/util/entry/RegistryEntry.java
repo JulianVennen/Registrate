@@ -57,8 +57,8 @@ public class RegistryEntry<T> implements NonNullSupplier<T> {
     /**
      * Update the underlying entry manually from the given registry.
      *
-     * @param registry
-     *            The registry to pull the entry from.
+     * @param event
+     *            The register event to pull the entry from.
      */
     public void updateReference(Registry<? super T> registry) {
         RegistryObject<T> delegate = this.delegate;

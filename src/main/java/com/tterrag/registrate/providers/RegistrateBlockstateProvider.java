@@ -1,10 +1,8 @@
 package com.tterrag.registrate.providers;
 
-import java.util.Optional;
-
 import com.tterrag.registrate.AbstractRegistrate;
 
-import net.minecraft.data.DataGenerator;
+import net.minecraft.data.PackOutput;
 import net.minecraft.world.level.block.Block;
 
 import net.fabricmc.api.EnvType;
@@ -13,12 +11,14 @@ import net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder;
 import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
+import java.util.Optional;
+
 public class RegistrateBlockstateProvider extends BlockStateProvider implements RegistrateProvider {
 
     private final AbstractRegistrate<?> parent;
 
-    public RegistrateBlockstateProvider(AbstractRegistrate<?> parent, DataGenerator gen, ExistingFileHelper exFileHelper) {
-        super(gen, parent.getModid(), exFileHelper);
+    public RegistrateBlockstateProvider(AbstractRegistrate<?> parent, PackOutput packOutput, ExistingFileHelper exFileHelper) {
+        super(packOutput, parent.getModid(), exFileHelper);
         this.parent = parent;
     }
 

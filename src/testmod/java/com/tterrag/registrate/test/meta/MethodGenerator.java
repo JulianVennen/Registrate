@@ -1,8 +1,10 @@
 package com.tterrag.registrate.test.meta;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -41,8 +43,10 @@ public class MethodGenerator {
     private final List<Pair<String, String>> typeReplacements;
     private final Set<Exclusion> excludes = new HashSet<>();
     
-    public MethodGenerator() {
-        this(ImmutableList.of());
+    private final Class<?> mainClass;
+    
+    public MethodGenerator(Class<?> mainClass) {
+        this(ImmutableList.of(), mainClass);
     }
     
     public MethodGenerator exclude(String name) {
@@ -81,11 +85,11 @@ public class MethodGenerator {
                         break;
                     }
                 }
-                itr.add("    " + START_KEY);
+                itr.add(line);
                 for (Header header : newHeaders) {
                     if (excludes.stream().anyMatch(e -> e.matches(header))) continue;
                     itr.add("");
-                    for (String s : header.printStubMethod().split("\n")) {
+                    for (String s : header.printStubMethod(mainClass).split("\n")) {
                         itr.add("    " + s);
                     }
                 }
@@ -95,5 +99,6 @@ public class MethodGenerator {
             }
         }
         Files.write(output, currentSource);
+        System.out.print("Updated source code: " + Paths.get("src/main/java").relativize(output).toString().replace(File.separator, ".").replace(".java", ""));
     }
 }

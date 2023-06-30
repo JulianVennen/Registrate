@@ -2,7 +2,6 @@ package com.tterrag.registrate;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.*;
 import com.tterrag.registrate.builders.*;
 import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
@@ -15,7 +14,9 @@ import com.tterrag.registrate.fabric.RegistryUtil;
 import com.tterrag.registrate.fabric.SimpleFlowableFluid;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateDataProvider;
+import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateProvider;
+import com.tterrag.registrate.util.CreativeModeTabModifier;
 import com.tterrag.registrate.util.DebugMarkers;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.*;
@@ -34,6 +35,7 @@ import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
@@ -43,7 +45,10 @@ import net.minecraft.world.entity.EntityType.EntityFactory;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import net.minecraft.world.level.block.Block;
@@ -76,30 +81,30 @@ import java.util.stream.Collectors;
  * parameter (such as {@link #block(String, NonNullFunction)}) can be used. These do not affect the current name state.
  * <p>
  * A simple use may look like:
- * 
+ *
  * <pre>
  * {@code
  * public static final Registrate REGISTRATE = Registrate.create("mymod");
- * 
+ *
  * public static final RegistryObject<MyBlock> MY_BLOCK = REGISTRATE.object("my_block")
  *         .block(MyBlock::new)
  *         .defaultItem()
  *         .register();
  * }
  * </pre>
- * 
+ *
  * For specifics as to building different registry entries, read the documentation on their respective builders.
  */
 @Log4j2
 public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
-    
+
     @Value
     private class Registration<R, T extends R> {
         ResourceLocation name;
         ResourceKey<? extends Registry<R>> type;
         NonNullSupplier<? extends T> creator;
         RegistryEntry<T> delegate;
-        
+
         @Getter(value = AccessLevel.NONE)
         List<NonNullConsumer<? super T>> callbacks = new ArrayList<>();
 
@@ -117,19 +122,24 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
             callbacks.forEach(c -> c.accept(entry));
             callbacks.clear();
         }
-        
+
         void addRegisterCallback(NonNullConsumer<? super T> callback) {
             Preconditions.checkNotNull(callback, "Callback must not be null");
             callbacks.add(callback);
         }
     }
 
+    /**
+     * Checks if Minecraft is running from a dev environment. Enables certain debug logging.
+     *
+     * @return {@code true} when in a dev environment (specifically, {@link FMLEnvironment#naming} == "mcp")
+     */
     public static boolean isDevEnvironment() {
         return FabricLoader.getInstance().isDevelopmentEnvironment();
     }
 
-    private final Table<String, ResourceKey<? extends Registry<?>>, Registration<?, ?>> registrations = HashBasedTable.create();
-    /** Expected to be emptied by the time registration occurs, is emptied by {@link #accept(String, Class, Builder, NonNullSupplier, NonNullFunction)} */
+    private final Table<ResourceKey<? extends Registry<?>>, String, Registration<?, ?>> registrations = HashBasedTable.create();
+    /** Expected to be emptied by the time registration occurs, is emptied by {@link #accept(String, ResourceKey, Builder, NonNullSupplier, NonNullFunction)} */
     private final Multimap<Pair<String, ResourceKey<? extends Registry<?>>>, NonNullConsumer<?>> registerCallbacks = HashMultimap.create();
     /** Entry-less callbacks that are invoked after the registry type has completely finished */
     private final Multimap<ResourceKey<? extends Registry<?>>, Runnable> afterRegisterCallbacks = HashMultimap.create();
@@ -137,7 +147,9 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     private final Table<Pair<String, ResourceKey<? extends Registry<?>>>, ProviderType<?>, Consumer<? extends RegistrateProvider>> datagensByEntry = HashBasedTable.create();
     private final ListMultimap<ProviderType<?>, @NonnullType NonNullConsumer<? extends RegistrateProvider>> datagens = ArrayListMultimap.create();
-    
+    private final Multimap<ResourceKey<CreativeModeTab>, Consumer<CreativeModeTabModifier>> creativeModeTabModifiers = ArrayListMultimap.create();
+    private ResourceKey<CreativeModeTab> defaultCreativeModeTab = CreativeModeTabs.SEARCH;
+
     private final NonNullSupplier<Boolean> doDatagen = NonNullSupplier.lazy(() -> System.getProperty("fabric-api.datagen") != null);
 
     /**
@@ -145,25 +157,28 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      */
     @Getter
     private final String modid;
-    
+
     @Nullable
     private String currentName;
-    @Nullable
-    private Supplier<? extends @NonnullType CreativeModeTab> currentTab;
     private boolean skipErrors;
-    
+
     /**
      * Construct a new Registrate for the given mod ID.
-     * 
+     *
      * @param modid
      *            The mod ID for which objects will be registered
      */
     protected AbstractRegistrate(String modid) {
         this.modid = modid;
     }
-    
+
+    /**
+     * Use this in custom implementations to hide unsafe casts to {@link S} when returning self.
+     *
+     * @return This {@link AbstractRegistrate} object, cast to {@link S}
+     */
     @SuppressWarnings("unchecked")
-    protected S self() {
+    protected final S self() {
         return (S) this;
     }
 
@@ -187,7 +202,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
                 throw new IllegalStateException("Found unused register callbacks, see logs");
             }
         }
-        Map<String, Registration<?, ?>> registrationsForType = registrations.column(type);
+        Map<String, Registration<?, ?>> registrationsForType = registrations.row(type);
         if (registrationsForType.size() > 0) {
             log.debug(DebugMarkers.REGISTER, "Registering {} known objects of type {}", registrationsForType.size(), type.location());
             for (Entry<String, Registration<?, ?>> e : registrationsForType.entrySet()) {
@@ -206,6 +221,13 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         }
     }
 
+    /**
+     * Called once per registry at the {@link EventPriority#LOWEST lowest priority} to perform any actions that must happen after all other entries have been registered, including from other mods. May
+     * be overriden in custom implementations to perform additional actions upon entry registration, but <i>must</i> call {@code super}.
+     *
+     * @param event
+     *            The {@link RegisterEvent} being fired, use {@link RegisterEvent#getRegistryKey()} to query the registry type
+     */
     protected void onRegisterLate(Registry<?> event) {
         @SuppressWarnings("unchecked")
         ResourceKey<? extends Registry<?>> type = event.key();
@@ -215,9 +237,28 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         completedRegistrations.add(type);
     }
 
+    /**
+     * Called when a {@link CreativeModeTab} is being populated to fill in any entries that belong there. Can be overriden in custom implementations.
+     *
+     * @param event
+     *            The event
+     */
+    protected void onBuildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
+        var modifier = new CreativeModeTabModifier(event::getFlags, event::hasPermissions, event::accept);
+
+        creativeModeTabModifiers.forEach((key, value) -> {
+            if(event.getTabKey().equals(key)) value.accept(modifier);
+        });
+    }
+
     @Nullable
     private RegistrateDataProvider provider;
-
+/**
+     * Called when datagen begins to add our provider to the generator. Can be overriden in custom implementations.
+     *
+     * @param event
+     *            The event
+     */
     /**
      * Setup this Registrate for Data Generation. Should be called from a {@link DataGeneratorEntrypoint}.
      * An {@link ExistingFileHelper} should be created and provided.
@@ -231,7 +272,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     /**
      * Get the current name (from the last call to {@link #object(String)}), throwing an exception if it is not set.
-     * 
+     *
      * @return The current entry name
      * @throws NullPointerException
      *             if {@link #currentName} is null
@@ -245,7 +286,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     /**
      * Allows retrieval of a previously created entry, of the current name (from the last invocation of {@link #object(String)}. Useful to retrieve a different entry than the final state of your
      * chain may produce, e.g.
-     * 
+     *
      * <pre>
      * {@code
      * public static final RegistryObject<BlockItem> MY_BLOCK_ITEM = REGISTRATE.object("my_block")
@@ -256,7 +297,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      *         .get(Item.class);
      * }
      * </pre>
-     * 
+     *
      * @param <R>
      *            The type of the registry for which to retrieve the entry
      * @param <T>
@@ -266,7 +307,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      * @return A {@link RegistryEntry} which will supply the requested entry, if it exists
      * @throws IllegalArgumentException
      *             if no such registration has been done
-     * @throws NullPointerException 
+     * @throws NullPointerException
      *             if current name has not been set via {@link #object(String)}
      */
     public <R, T extends R> RegistryEntry<T> get(ResourceKey<? extends Registry<R>> type) {
@@ -305,7 +346,19 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         return this.<R, T>getRegistration(name, type).getDelegate();
     }
 
-    @Beta
+    /**
+     * Allows retrieval of a previously created entry that may or may not exist. Possibly useful in some very specific scenarios, internally used during fluid registration.
+     *
+     * @param <R>
+     *            The type of the registry for which to retrieve the entry
+     * @param <T>
+     *            The type of the entry to return
+     * @param name
+     *            The name of the registry entry to request
+     * @param type
+     *            A class representing the registry type
+     * @return A {@link RegistryEntry} which will supply the requested entry, if it exists, otherwise the {@link RegistryEntry#empty() empty entry}
+     */
     public <R, T extends R> RegistryEntry<T> getOptional(String name, ResourceKey<? extends Registry<R>> type) {
         Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, type);
         return reg == null ? RegistryEntry.empty() : reg.getDelegate();
@@ -314,9 +367,9 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     @SuppressWarnings("unchecked")
     @Nullable
     private <R, T extends R> Registration<R, T> getRegistrationUnchecked(String name, ResourceKey<? extends Registry<R>> type) {
-        return (Registration<R, T>) registrations.get(name, type);
+        return (Registration<R, T>) registrations.get(type, name);
     }
-    
+
     private <R, T extends R> Registration<R, T> getRegistration(String name, ResourceKey<? extends Registry<R>> type) {
         Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, type);
         if (reg != null) {
@@ -325,11 +378,37 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         throw new IllegalArgumentException("Unknown registration " + name + " for type " + type);
     }
 
+    /**
+     * Gather a collection of all entries registered for a certain registry
+     * <p>
+     * Note that this can be called before registration is complete, but the {@link RegistryEntry entries} will be empty at that time.
+     *
+     * @param <R>
+     *            Registry type
+     * @param type
+     *            A {@link ResourceKey} for the registry in question
+     * @return A collection of {@link RegistryEntry} objects representing all entries in the given registry which are known to this {@link AbstractRegistrate} object.
+     */
     @SuppressWarnings({ "null", "unchecked" })
     public <R> Collection<RegistryEntry<R>> getAll(ResourceKey<? extends Registry<R>> type) {
-        return registrations.column(type).values().stream().map(r -> (RegistryEntry<R>) r.getDelegate()).collect(Collectors.toList());
+        return registrations.row(type).values().stream().map(r -> (RegistryEntry<R>) r.getDelegate()).collect(Collectors.toList());
     }
 
+    /**
+     * Add a callback to be invoked when a certain entry has been registered. This will be invoked <i>immediately</i> following registration, before further entries are registered.
+     *
+     * @param <R>
+     *            Registry type
+     * @param <T>
+     *            Entry type
+     * @param name
+     *            The name of the entry to watch (implicitly within the {@link #getModid() modid} of this instance
+     * @param registryType
+     *            A {@link ResourceKey} for the registry in question
+     * @param callback
+     *            The callback to invoke, which will be passed the created entry object
+     * @return This {@link AbstractRegistrate} instance
+     */
     public <R, T extends R> S addRegisterCallback(String name, ResourceKey<? extends Registry<R>> registryType, NonNullConsumer<? super T> callback) {
         Registration<R, T> reg = this.<R, T>getRegistrationUnchecked(name, registryType);
         if (reg == null) {
@@ -340,18 +419,38 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         return self();
     }
 
+    /**
+     * Add a callback to be invoked when a certain registry has fully completed registration, i.e. all objects of that type have been registered.
+     *
+     * @param <R>
+     *            The registry type
+     * @param registryType
+     *            A {@link ResourceKey} for the registry in question
+     * @param callback
+     *            The callback to invoke
+     * @return This {@link AbstractRegistrate} instance
+     */
     public <R> S addRegisterCallback(ResourceKey<? extends Registry<R>> registryType, Runnable callback) {
         afterRegisterCallbacks.put((ResourceKey<? extends Registry<?>>) registryType, callback);
         return self();
     }
 
+    /**
+     * Check if a certain registry has completed registration.
+     *
+     * @param <R>
+     *            The registry type
+     * @param registryType
+     *            A {@link ResourceKey} for the registry in question
+     * @return {@code true} iff the given registry has finished the registration step
+     */
     public <R> boolean isRegistered(ResourceKey<? extends Registry<R>> registryType) {
         return completedRegistrations.contains(registryType);
     }
 
     /**
      * Get the data provider instance for a given {@link ProviderType}. Only works within datagen context, not during registration or init.
-     * 
+     *
      * @param <P>
      *            The type of the provider
      * @param type
@@ -370,7 +469,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     /**
      * Mostly internal, sets the data generator for a certain entry/type combination. This will replace an existing data gen callback if it exists.
-     * 
+     *
      * @param <P>
      *            The type of provider
      * @param <R>
@@ -383,13 +482,13 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      *            A callback to be invoked during data generation
      * @return this {@link AbstractRegistrate}
      */
-    public <P extends RegistrateProvider, R> S setDataGenerator(Builder<R, ?, ?, ?> builder, ProviderType<P> type, NonNullConsumer<? extends P> cons) {
+    public <P extends RegistrateProvider, R> S setDataGenerator(Builder<R, ?, ?, ?> builder, ProviderType<? extends P> type, NonNullConsumer<? extends P> cons) {
         return this.<P, R>setDataGenerator(builder.getName(), builder.getRegistryKey(), type, cons);
     }
 
     /**
      * Mostly internal, sets the data generator for a certain entry/type combination. This will replace an existing data gen callback if it exists.
-     * 
+     *
      * @param <P>
      *            The type of provider
      * @param <R>
@@ -404,7 +503,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      *            A callback to be invoked during data generation
      * @return this {@link AbstractRegistrate}
      */
-    public <P extends RegistrateProvider, R> S setDataGenerator(String entry, ResourceKey<? extends Registry<R>> registryType, ProviderType<P> type, NonNullConsumer<? extends P> cons) {
+    public <P extends RegistrateProvider, R> S setDataGenerator(String entry, ResourceKey<? extends Registry<R>> registryType, ProviderType<? extends P> type, NonNullConsumer<? extends P> cons) {
         if (!doDatagen.get()) return self();
         @SuppressWarnings("null")
         Consumer<? extends RegistrateProvider> existing = datagensByEntry.put(Pair.of(entry, registryType), type, cons);
@@ -413,12 +512,12 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         }
         return addDataGenerator(type, cons);
     }
-    
+
     /**
      * Add a data generator callback that is not associated with any entry, which can never replace an existing data generator.
      * <p>
      * This is useful to add data generator callbacks for miscellaneous data not strictly associated with an entry.
-     * 
+     *
      * @param <T>
      *            The type of provider
      * @param type
@@ -433,7 +532,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         }
         return self();
     }
-    
+
     private final NonNullSupplier<List<Pair<String, String>>> extraLang = NonNullSupplier.lazy(() -> {
         final List<Pair<String, String>> ret = new ArrayList<>();
         addDataGenerator(ProviderType.LANG, prov -> ret.forEach(p -> prov.add(p.getKey(), p.getValue())));
@@ -442,7 +541,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     /**
      * Add a custom translation mapping using the vanilla style of ResourceLocation -&gt; translation key conversion.
-     * 
+     *
      * @param type
      *            Type of the object, this is used as a prefix (e.g. {@code ["block", "mymod:myblock"] -> "block.mymod.myblock"})
      * @param id
@@ -454,10 +553,10 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     public MutableComponent addLang(String type, ResourceLocation id, String localizedName) {
         return addRawLang(Util.makeDescriptionId(type, id), localizedName);
     }
-    
+
     /**
      * Add a custom translation mapping using the vanilla style of ResourceLocation -&gt; translation key conversion. Also appends a suffix to the key.
-     * 
+     *
      * @param type
      *            Type of the object, this is used as a prefix (e.g. {@code ["block", "mymod:myblock"] -> "block.mymod.myblock"})
      * @param id
@@ -474,7 +573,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     /**
      * Add a custom translation mapping directly to the lang provider.
-     * 
+     *
      * @param key
      *            The translation key
      * @param value
@@ -487,7 +586,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         }
         return Component.translatable(key);
     }
-    
+
     @SuppressWarnings("null")
     private Optional<Pair<String, ResourceKey<? extends Registry<?>>>> getEntryForGenerator(ProviderType<?> type, NonNullConsumer<? extends RegistrateProvider> generator) {
         for (Map.Entry<Pair<String, ResourceKey<? extends Registry<?>>>, Consumer<? extends RegistrateProvider>> e : datagensByEntry.column(type).entrySet()) {
@@ -497,10 +596,10 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         }
         return Optional.empty();
     }
-    
+
     /**
      * For internal use, calls upon registered data generators to actually create their data.
-     * 
+     *
      * @param <T>
      *            The type of the provider
      * @param type
@@ -546,7 +645,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      * Enable skipping of registry entries and data generators that error during registration/generation.
      * <p>
      * <strong>Should only be used for debugging!</strong> {@code skipErrors(true)} will do nothing outside of a dev environment.
-     * 
+     *
      * @param skipErrors
      *            {@code true} to skip errors during registration/generation
      * @return this {@link AbstractRegistrate}
@@ -559,11 +658,11 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         }
         return self();
     }
-    
+
     /**
      * Begin a new object, this is typically used at the beginning of a builder chain. The given name will be used until this method is called again. This makes it simple to create multiple entries
      * with the same name, as is often the case with blocks/items, items/entities, and blocks/TEs.
-     * 
+     *
      * @param name
      *            The name to use for future entries
      * @return this {@link AbstractRegistrate}
@@ -574,38 +673,40 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     /**
-     * Set the default creative mode tab for all future items created with this Registrate, until the next time this method is called. The supplier will only be called once, and the value re-used for each
-     * entry.
+     * Set the default CreativeModeTab to be passed onto future builders.
+     * <p>
+     * This special case method should be used if your creative tab instance was not created by Registrate, otherwise use {@link #defaultCreativeTab()}.
      * 
-     * @param tab
-     *            The tab to use for future items
-     * @return this {@link AbstractRegistrate}
+     * @param creativeModeTab
+     *            The new default CreativeModeTab type
+     * @return This {@link AbstractRegistrate} instance
      */
-    public S creativeModeTab(NonNullSupplier<? extends CreativeModeTab> tab) {
-        this.currentTab = Suppliers.memoize(tab::get);
+    public S defaultCreativeTab(ResourceKey<CreativeModeTab> creativeModeTab) {
+        defaultCreativeModeTab = creativeModeTab;
         return self();
     }
 
     /**
-     * Set the default creative mode tab for all future items created with this Registrate, until the next time this method is called. The supplier will only be called once, and the value re-used for each
-     * entry.
+     * Registers a new modifier callback to be used to modify the given CreativeModeTab.
+     *
      * <p>
-     * Additionally, add a translation for the creative mode tab.
-     * 
-     * @param tab
-     *            The tab to use for future items
-     * @param localizedName
-     *            The english name to use for the creative mode tab title
-     * @return this {@link AbstractRegistrate}
+     * Registers a new callback to be invoked during the {@link BuildCreativeModeTabContentsEvent} event and
+     * used to modify what items are displayed on the given {@link CreativeModeTab}.
+     * <p>
+     * Calling this method multiple times will add additional callbacks.
+     *
+     * @param creativeModeTab The {@link CreativeModeTab} to register this callback for
+     * @param modifier The modifier callback to be registered
+     * @return This {@link AbstractRegistrate} instance
      */
-    public S creativeModeTab(NonNullSupplier<? extends CreativeModeTab> tab, String localizedName) {
-        this.addDataGenerator(ProviderType.LANG, prov -> prov.add(tab.get(), localizedName));
-        return creativeModeTab(tab);
+    public S modifyCreativeModeTab(ResourceKey<CreativeModeTab> creativeModeTab, Consumer<CreativeModeTabModifier> modifier) {
+        creativeModeTabModifiers.put(creativeModeTab, modifier);
+        return self();
     }
-    
+
     /**
      * Apply a transformation to this {@link AbstractRegistrate}. Useful to apply helper methods within a fluent chain, e.g.
-     * 
+     *
      * <pre>
      * {@code
      * public static final RegistryObject<MyBlock> MY_BLOCK = REGISTRATE.object("my_block")
@@ -613,7 +714,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      *         .get(Block.class);
      * }
      * </pre>
-     * 
+     *
      * @param func
      *            The {@link UnaryOperator function} to apply
      * @return this {@link AbstractRegistrate}
@@ -621,11 +722,11 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     public S transform(NonNullUnaryOperator<S> func) {
         return func.apply(self());
     }
-    
+
     /**
      * Apply a transformation to this {@link AbstractRegistrate}. Similar to {@link #transform(NonNullUnaryOperator)}, but for actions that return a builder in-progress. Useful to apply helper methods
      * within a fluent chain, e.g.
-     * 
+     *
      * <pre>
      * {@code
      * public static final RegistryObject<MyBlock> MY_BLOCK = REGISTRATE.object("my_block")
@@ -634,7 +735,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      *         .register();
      * }
      * </pre>
-     * 
+     *
      * @param <R>
      *            Registry type
      * @param <T>
@@ -650,12 +751,12 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     public <R, T extends R, P, S2 extends Builder<R, T, P, S2>> S2 transform(NonNullFunction<S, S2> func) {
         return func.apply(self());
     }
-    
+
     /**
      * Create a builder for a new entry. This is typically not needed, unless you are implementing a <a href="https://github.com/tterrag1098/Registrate/wiki/Custom-Builders">custom builder type</a>.
      * <p>
      * Uses the currently set name (via {@link #object(String)}) as the name for the new entry, and passes it to the factory as the first parameter.
-     * 
+     *
      * @param <R>
      *            Registry type
      * @param <T>
@@ -674,7 +775,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     /**
      * Create a builder for a new entry. This is typically not needed, unless you are implementing a <a href="https://github.com/tterrag1098/Registrate/wiki/Custom-Builders">custom builder type</a>.
-     * 
+     *
      * @param <R>
      *            Registry type
      * @param <T>
@@ -693,6 +794,27 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
         return factory.apply(this::accept);
     }
 
+    /**
+     * Factory method to accept a completed builder and add it to the registration queue.
+     * <p>
+     * Satisfies the functional interface {@link BuilderCallback}, which is typically given to new builder instances when they are constructed.
+     *
+     * @param <R>
+     *            Registry type
+     * @param <T>
+     *            Entry type
+     * @param name
+     *            Thename of the entry being created
+     * @param type
+     *            The registry to add the entry to
+     * @param builder
+     *            The builder instance that was used to create this entry. Not used by default implementation, but custom extensions may use it for some purpose
+     * @param creator
+     *            Constructor for the new entry object
+     * @param entryFactory
+     *            Optional custom factory to create special {@link RegistryEntry} types
+     * @return A {@link RegistryEntry} that will hold the created entry after registration is complete
+     */
     protected <R, T extends R> RegistryEntry<T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> creator, NonNullFunction<RegistryObject<T>, ? extends RegistryEntry<T>> entryFactory) {
         Registration<R, T> reg = new Registration<>(new ResourceLocation(modid, name), type, creator, entryFactory);
         log.debug(DebugMarkers.REGISTER, "Captured registration for entry {} of type {}", name, type.location());
@@ -701,7 +823,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
             NonNullConsumer<? super T> unsafeCallback = (NonNullConsumer<? super T>) callback;
             reg.addRegisterCallback(unsafeCallback);
         });
-        registrations.put(name, type, reg);
+        registrations.put(type, name, reg);
         return reg.getDelegate();
     }
 
@@ -766,101 +888,100 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     public <R, T extends R, P> RegistryEntry<T> simple(P parent, String name, ResourceKey<Registry<R>> registryType, NonNullSupplier<T> factory) {
-        return entry(name, callback -> new NoConfigBuilder<R, T, P>(this, parent, name, callback, registryType, factory)).register();
+        return generic(parent, name, registryType, factory).register();
+    }
+
+    public <R, T extends R> NoConfigBuilder<R, T, S> generic(ResourceKey<Registry<R>> registryType, NonNullSupplier<T> factory) {
+        return generic(self(), registryType, factory);
+    }
+
+    public <R, T extends R> NoConfigBuilder<R, T, S> generic(String name, ResourceKey<Registry<R>> registryType, NonNullSupplier<T> factory) {
+        return generic(self(), name, registryType, factory);
+    }
+
+    public <R, T extends R, P> NoConfigBuilder<R, T, P> generic(P parent, ResourceKey<Registry<R>> registryType, NonNullSupplier<T> factory) {
+        return generic(parent, currentName(), registryType, factory);
+    }
+
+    public <R, T extends R, P> NoConfigBuilder<R, T, P> generic(P parent, String name, ResourceKey<Registry<R>> registryType, NonNullSupplier<T> factory) {
+        return entry(name, callback -> new NoConfigBuilder<R, T, P>(this, parent, name, callback, registryType, factory));
     }
 
     // Items
-    
+
     public <T extends Item> ItemBuilder<T, S> item(NonNullFunction<Item.Properties, T> factory) {
         return item(self(), factory);
     }
-    
+
     public <T extends Item> ItemBuilder<T, S> item(String name, NonNullFunction<Item.Properties, T> factory) {
         return item(self(), name, factory);
     }
-    
+
     public <T extends Item, P> ItemBuilder<T, P> item(P parent, NonNullFunction<Item.Properties, T> factory) {
         return item(parent, currentName(), factory);
     }
-    
+
     public <T extends Item, P> ItemBuilder<T, P> item(P parent, String name, NonNullFunction<Item.Properties, T> factory) {
-        // TODO clean this up when NonNullLazyValue is fixed better
-        Supplier<? extends @NonnullType CreativeModeTab> currentTab = this.currentTab;
-        return entry(name, callback -> ItemBuilder.create(this, parent, name, callback, factory, currentTab == null ? null : currentTab::get));
+        return entry(name, callback -> ItemBuilder.create(this, parent, name, callback, factory)
+                .transform(builder -> this.defaultCreativeModeTab == null ? builder : builder.tab(this.defaultCreativeModeTab)));
     }
-    
+
     // Blocks
-    
+
     public <T extends Block> BlockBuilder<T, S> block(NonNullFunction<BlockBehaviour.Properties, T> factory) {
         return block(self(), factory);
     }
-    
+
     public <T extends Block> BlockBuilder<T, S> block(String name, NonNullFunction<BlockBehaviour.Properties, T> factory) {
         return block(self(), name, factory);
     }
-    
+
     public <T extends Block, P> BlockBuilder<T, P> block(P parent, NonNullFunction<BlockBehaviour.Properties, T> factory) {
         return block(parent, currentName(), factory);
     }
-    
+
     public <T extends Block, P> BlockBuilder<T, P> block(P parent, String name, NonNullFunction<BlockBehaviour.Properties, T> factory) {
-        return block(parent, name, Material.STONE, factory);
+        return entry(name, callback -> BlockBuilder.create(this, parent, name, callback, factory));
     }
-    
-    public <T extends Block> BlockBuilder<T, S> block(Material material, NonNullFunction<BlockBehaviour.Properties, T> factory) {
-        return block(self(), material, factory);
-    }
-    
-    public <T extends Block> BlockBuilder<T, S> block(String name, Material material, NonNullFunction<BlockBehaviour.Properties, T> factory) {
-        return block(self(), name, material, factory);
-    }
-    
-    public <T extends Block, P> BlockBuilder<T, P> block(P parent, Material material, NonNullFunction<BlockBehaviour.Properties, T> factory) {
-        return block(parent, currentName(), material, factory);
-    }
-    
-    public <T extends Block, P> BlockBuilder<T, P> block(P parent, String name, Material material, NonNullFunction<BlockBehaviour.Properties, T> factory) {
-        return entry(name, callback -> BlockBuilder.create(this, parent, name, callback, factory, material));
-    }
-    
+
     // Entities
-    
+
     public <T extends Entity> EntityBuilder<T, S> entity(EntityFactory<T> factory, MobCategory classification) {
         return entity(self(), factory, classification);
     }
-    
+
     public <T extends Entity> EntityBuilder<T, S> entity(String name, EntityFactory<T> factory, MobCategory classification) {
         return entity(self(), name, factory, classification);
     }
-    
+
     public <T extends Entity, P> EntityBuilder<T, P> entity(P parent, EntityFactory<T> factory, MobCategory classification) {
         return entity(parent, currentName(), factory, classification);
     }
-    
+
     public <T extends Entity, P> EntityBuilder<T, P> entity(P parent, String name, EntityFactory<T> factory, MobCategory classification) {
         return entry(name, callback -> EntityBuilder.create(this, parent, name, callback, factory, classification));
     }
-    
+
     // Block Entities
-    
+
     public <T extends BlockEntity> BlockEntityBuilder<T, S> blockEntity(BlockEntityFactory<T> factory) {
         return blockEntity(self(), factory);
     }
-    
+
     public <T extends BlockEntity> BlockEntityBuilder<T, S> blockEntity(String name, BlockEntityFactory<T> factory) {
         return blockEntity(self(), name, factory);
     }
-    
+
     public <T extends BlockEntity, P> BlockEntityBuilder<T, P> blockEntity(P parent, BlockEntityFactory<T> factory) {
         return blockEntity(parent, currentName(), factory);
     }
-    
+
     public <T extends BlockEntity, P> BlockEntityBuilder<T, P> blockEntity(P parent, String name, BlockEntityFactory<T> factory) {
         return entry(name, callback -> BlockEntityBuilder.create(this, parent, name, callback, factory));
     }
-    
+
     // Fluids
-    
+
     public FluidBuilder<SimpleFlowableFluid.Flowing, S> fluid() {
         return fluid(self());
     }
@@ -914,7 +1035,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     // Menu
-    
+
     public <T extends AbstractContainerMenu, SC extends Screen & MenuAccess<T>> MenuBuilder<T, SC, S> menu(MenuFactory<T> factory, NonNullSupplier<ScreenFactory<T, SC>> screenFactory) {
         return menu(currentName(), factory, screenFactory);
     }
@@ -946,22 +1067,63 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     public <T extends AbstractContainerMenu, SC extends Screen & MenuAccess<T>, P> MenuBuilder<T, SC, P> menu(P parent, String name, ForgeMenuFactory<T> factory, NonNullSupplier<ScreenFactory<T, SC>> screenFactory) {
         return entry(name, callback -> new MenuBuilder<T, SC, P>(this, parent, name, callback, factory, screenFactory));
     }
-    
+
     // Enchantment
-    
+
     public <T extends Enchantment> EnchantmentBuilder<T, S> enchantment(EnchantmentCategory type, EnchantmentFactory<T> factory) {
         return enchantment(self(), type, factory);
     }
-    
+
     public <T extends Enchantment> EnchantmentBuilder<T, S> enchantment(String name, EnchantmentCategory type, EnchantmentFactory<T> factory) {
         return enchantment(self(), name, type, factory);
     }
-    
+
     public <T extends Enchantment, P> EnchantmentBuilder<T, P> enchantment(P parent, EnchantmentCategory type, EnchantmentFactory<T> factory) {
         return enchantment(parent, currentName(), type, factory);
     }
-    
+
     public <T extends Enchantment, P> EnchantmentBuilder<T, P> enchantment(P parent, String name, EnchantmentCategory type, EnchantmentFactory<T> factory) {
         return entry(name, callback -> EnchantmentBuilder.create(this, parent, name, callback, type, factory));
+    }
+
+    // Creative Tab
+
+    public NoConfigBuilder<CreativeModeTab, CreativeModeTab, S> defaultCreativeTab() {
+        return defaultCreativeTab(self());
+    }
+
+    public NoConfigBuilder<CreativeModeTab, CreativeModeTab, S> defaultCreativeTab(String name) {
+        return defaultCreativeTab(self(), name);
+    }
+
+    public <P> NoConfigBuilder<CreativeModeTab, CreativeModeTab, P> defaultCreativeTab(P parent) {
+        return defaultCreativeTab(parent, currentName());
+    }
+
+    public <P> NoConfigBuilder<CreativeModeTab, CreativeModeTab, P> defaultCreativeTab(P parent, String name) {
+        return defaultCreativeTab(parent, name, tab -> {});
+    }
+
+    public NoConfigBuilder<CreativeModeTab, CreativeModeTab, S> defaultCreativeTab(Consumer<CreativeModeTab.Builder> config) {
+        return defaultCreativeTab(self(), config);
+    }
+
+    public NoConfigBuilder<CreativeModeTab, CreativeModeTab, S> defaultCreativeTab(String name, Consumer<CreativeModeTab.Builder> config) {
+        return defaultCreativeTab(self(), name, config);
+    }
+
+    public <P> NoConfigBuilder<CreativeModeTab, CreativeModeTab, P> defaultCreativeTab(P parent, Consumer<CreativeModeTab.Builder> config) {
+        return defaultCreativeTab(parent, currentName(), config);
+    }
+
+    public <P> NoConfigBuilder<CreativeModeTab, CreativeModeTab, P> defaultCreativeTab(P parent, String name, Consumer<CreativeModeTab.Builder> config) {
+        this.defaultCreativeModeTab = ResourceKey.create(Registries.CREATIVE_MODE_TAB, new ResourceLocation(this.modid, name));
+        return this.generic(parent, name, Registries.CREATIVE_MODE_TAB, () -> {
+            var builder = CreativeModeTab.builder()
+                    .icon(() -> getAll(Registries.ITEM).stream().findFirst().map(ItemEntry::cast).map(ItemEntry::asStack).orElse(new ItemStack(Items.AIR)))
+                    .title(this.addLang("itemGroup", this.defaultCreativeModeTab.location(), RegistrateLangProvider.toEnglishName(name)));
+            config.accept(builder);
+            return builder.build();
+        });
     }
 }

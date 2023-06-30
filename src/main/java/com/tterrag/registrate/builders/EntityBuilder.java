@@ -23,15 +23,10 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.SpawnPlacements.SpawnPredicate;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -41,6 +36,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import org.jetbrains.annotations.Nullable;
+
+import javax.annotation.Nullable;
+import java.util.function.Supplier;
 
 /**
  * A builder for entities, allows for customization of the {@link EntityType.Builder}, easy creation of spawn egg items, and configuration of data associated with entities (loot tables, etc.).
@@ -87,12 +85,10 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     private final NonNullSupplier<FabricEntityTypeBuilder<T>> builder;
 
     private NonNullConsumer<FabricEntityTypeBuilder<T>> builderCallback = $ -> {};
-
     @Nullable
     private NonNullSupplier<NonNullFunction<EntityRendererProvider.Context, EntityRenderer<? super T>>> renderer;
 
     private boolean attributesConfigured, spawnConfigured; // TODO make this more reuse friendly
-
 
     protected EntityBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, EntityType.EntityFactory<T> factory, MobCategory classification) {
         super(owner, parent, name, callback, Registry.ENTITY_TYPE_REGISTRY);
@@ -230,7 +226,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     @SuppressWarnings({"unchecked" })
     @Deprecated
     public ItemBuilder<? extends SpawnEggItem, EntityBuilder<T, P>> spawnEgg(int primaryColor, int secondaryColor) {
-        return getOwner().item(this, getName() + "_spawn_egg", p -> new SpawnEggItem((EntityType<? extends Mob>) get().get(), primaryColor, secondaryColor, p)).properties(p -> p.tab(CreativeModeTab.TAB_MISC))
+        return getOwner().item(this, getName() + "_spawn_egg", p -> new SpawnEggItem((EntityType<? extends Mob>) get().get(), primaryColor, secondaryColor, p)).tab(CreativeModeTabs.SPAWN_EGGS)
                 .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), new ResourceLocation("item/template_spawn_egg")));
     }
 

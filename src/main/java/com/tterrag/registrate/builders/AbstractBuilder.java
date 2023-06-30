@@ -17,9 +17,15 @@ import com.tterrag.registrate.util.nullness.NonnullType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
 import net.minecraft.core.Registry;
+import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagEntry;
 import net.minecraft.tags.TagKey;
+
+import java.util.Arrays;
 
 import java.util.Arrays;
 
@@ -51,15 +57,15 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     private final BuilderCallback callback;
     @Getter(onMethod_ = {@Override})
     private final ResourceKey<Registry<R>> registryKey;
-    
+
     private final Multimap<ProviderType<? extends RegistrateTagsProvider<?>>, TagKey<?>> tagsByType = HashMultimap.create();
-    
+
     /** A supplier for the entry that will discard the reference to this builder after it is resolved */
     private final LazyRegistryEntry<T> safeSupplier = new LazyRegistryEntry<>(this);
 
     /**
      * Create the built entry. This method will be lazily resolved at registration time, so it is safe to bake in values from the builder.
-     * 
+     *
      * @return The built entry
      */
     @SuppressWarnings("null")
@@ -73,7 +79,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
     protected RegistryEntry<T> createEntryWrapper(RegistryObject<T> delegate) {
         return new RegistryEntry<>(getOwner(), delegate);
     }
-    
+
     @Override
     public NonNullSupplier<T> asSupplier() {
         return safeSupplier;
@@ -81,7 +87,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
 
     /**
      * Tag this entry with a tag (or tags) of the correct type. Multiple calls will add additional tags.
-     * 
+     *
      * @param type
      *            The provider type (which must be a tag provider)
      * @param tags
@@ -90,12 +96,12 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
      */
     @SuppressWarnings("unchecked")
     @SafeVarargs
-    public final S tag(ProviderType<? extends RegistrateTagsProvider<R>> type, TagKey<R>... tags) {
+    public final <TP extends TagsProvider<R> & RegistrateTagsProvider<R>> S tag(ProviderType<? extends TP> type, TagKey<R>... tags) {
         if (!tagsByType.containsKey(type)) {
             setData(type, (ctx, prov) -> tagsByType.get(type).stream()
                     .map(t -> (TagKey<R>) t)
-                    .map(prov::tag)
-                    .forEach(b -> b.add(asSupplier().get())));
+                    .map(prov::addTag)
+                    .forEach(b -> b.add(TagEntry.element(new ResourceLocation(getOwner().getModid(), getName())))));
         }
         tagsByType.putAll(type, Arrays.asList(tags));
         return (S) this;
@@ -103,7 +109,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
 
     /**
      * Remove a tag (or tags) from this entry of a given type. Useful to remove default tags on fluids, for example. Multiple calls will remove additional tags.
-     * 
+     *
      * @param type
      *            The provider type (which must be a tag provider)
      * @param tags
@@ -112,7 +118,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
      */
     @SuppressWarnings("unchecked")
     @SafeVarargs
-    public final S removeTag(ProviderType<RegistrateTagsProvider<R>> type, TagKey<R>... tags) {
+    public final <TP extends TagsProvider<R> & RegistrateTagsProvider<R>> S removeTag(ProviderType<TP> type, TagKey<R>... tags) {
         if (tagsByType.containsKey(type)) {
             for (TagKey<R> tag : tags) {
                 tagsByType.remove(type, tag);
@@ -135,7 +141,7 @@ public abstract class AbstractBuilder<R, T extends R, P, S extends AbstractBuild
 
     /**
      * Set the lang key for this entry to the specified name. Generally, specific helpers from concrete builders should be used instead.
-     * 
+     *
      * @param langKeyProvider
      *            A function to get the translation key from the entry
      * @param name

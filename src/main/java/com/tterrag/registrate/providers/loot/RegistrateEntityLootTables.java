@@ -27,7 +27,6 @@ public class RegistrateEntityLootTables extends SimpleFabricLootTableProvider im
         this.parent = parent;
         this.callback = callback;
     }
-
     @Override
     public void accept(BiConsumer<ResourceLocation, Builder> consumer) {
         callback.accept(this);
