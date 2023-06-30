@@ -20,7 +20,7 @@ import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.*;
@@ -36,9 +36,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nullable;
-import java.util.function.Supplier;
 
 /**
  * A builder for entities, allows for customization of the {@link EntityType.Builder}, easy creation of spawn egg items, and configuration of data associated with entities (loot tables, etc.).
@@ -91,7 +88,7 @@ public class EntityBuilder<T extends Entity, P> extends AbstractBuilder<EntityTy
     private boolean attributesConfigured, spawnConfigured; // TODO make this more reuse friendly
 
     protected EntityBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, EntityType.EntityFactory<T> factory, MobCategory classification) {
-        super(owner, parent, name, callback, Registry.ENTITY_TYPE_REGISTRY);
+        super(owner, parent, name, callback, Registries.ENTITY_TYPE);
         this.builder = () -> FabricEntityTypeBuilder.create(classification, factory);
     }
 

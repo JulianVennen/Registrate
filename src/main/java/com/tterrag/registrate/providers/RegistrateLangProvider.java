@@ -1,23 +1,30 @@
 package com.tterrag.registrate.providers;
 
-import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.tterrag.registrate.fabric.BaseLangProvider;
+import io.github.fabricators_of_create.porting_lib.data.LanguageProvider;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.api.EnvType;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.CachedOutput;
+import net.minecraft.data.PackOutput;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
+
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider.TranslationBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonnullType;
-import org.apache.commons.lang3.StringUtils;
 
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -28,11 +35,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 
-public class RegistrateLangProvider extends LanguageProvider implements RegistrateProvider {
+public class RegistrateLangProvider extends BaseLangProvider implements RegistrateProvider {
 
-    private static class AccessibleLanguageProvider extends LanguageProvider {
-        public AccessibleLanguageProvider(FabricDataGenerator gen, String locale) {
-            super(gen, locale);
+    private static class AccessibleLanguageProvider extends BaseLangProvider {
+        public AccessibleLanguageProvider(FabricDataOutput output, String locale) {
+            super(output, locale);
         }
     }
 
@@ -40,8 +47,8 @@ public class RegistrateLangProvider extends LanguageProvider implements Registra
 
     private final AccessibleLanguageProvider upsideDown;
 
-    public RegistrateLangProvider(AbstractRegistrate<?> owner, PackOutput packOutput) {
-        super(packOutput, owner.getModid(), "en_us");
+    public RegistrateLangProvider(AbstractRegistrate<?> owner, FabricDataOutput packOutput) {
+        super(packOutput, "en_us");
         this.owner = owner;
         this.upsideDown = new AccessibleLanguageProvider(packOutput, "en_ud");
     }

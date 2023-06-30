@@ -1,58 +1,50 @@
 package com.tterrag.registrate.mixin;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.llamalad7.mixinextras.injector.ModifyReceiver;
 import com.llamalad7.mixinextras.injector.WrapWithCondition;
-import com.mojang.datafixers.util.Pair;
-import com.tterrag.registrate.providers.loot.RegistrateLootTableProvider;
-import net.minecraft.data.CachedOutput;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.tterrag.registrate.fabric.CustomValidationLootProvider;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.LootTable.Builder;
 import net.minecraft.world.level.storage.loot.ValidationContext;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-
-import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 @Mixin(LootTableProvider.class)
 public class LootTableProviderMixin {
-	@ModifyReceiver(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/List;forEach(Ljava/util/function/Consumer;)V", remap = false))
-	private List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootContextParamSet>> registrate$runCustomGeneration(
-			List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, Builder>>>, LootContextParamSet>> subProviders,
-			Consumer<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, Builder>>>, LootContextParamSet>> consumer) {
-		if ((Object) this instanceof RegistrateLootTableProvider registrate) {
-			return registrate.getTables();
-		}
-		return subProviders;
-	}
+    @ModifyExpressionValue(
+            method = "run",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Ljava/util/Set;iterator()Ljava/util/Iterator;" // Sets.difference
+            )
+    )
+    private Iterator<ResourceLocation> runCustomValidation(Iterator<ResourceLocation> original,
+                                                        @Local(ordinal = 0) Map<ResourceLocation, LootTable> tables,
+                                                        @Local(ordinal = 0)ValidationContext context) {
+        if (this instanceof CustomValidationLootProvider custom) {
+            custom.validate(tables, context);
+            return Collections.emptyIterator();
+        }
+        return original;
+    }
 
-	@ModifyExpressionValue(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;", remap = false))
-	private Iterator<ResourceLocation> registrate$preventVanillaValidationReporting(Iterator<ResourceLocation> difference) {
-		if ((Object) this instanceof RegistrateLootTableProvider registrate) {
-			return Collections.emptyIterator(); // empty, do nothing
-		}
-		return difference;
-	}
-
-	@WrapWithCondition(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0, remap = false))
-	private boolean registrate$preventVanillaValidation(Map<ResourceLocation, LootTable> map, BiConsumer<ResourceLocation, LootTable> consumer) {
-		// if registrate, don't validate
-		return !((Object) this instanceof RegistrateLootTableProvider);
-	}
-
-	@Inject(method = "run", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0, remap = false), locals = LocalCapture.CAPTURE_FAILHARD)
-	private void registrate$doCustomValidation(CachedOutput output, CallbackInfo ci, Map<ResourceLocation, LootTable> map, ValidationContext validationContext) {
-		if ((Object) this instanceof RegistrateLootTableProvider registrate) {
-			registrate.validate(map, validationContext);
-		}
-	}
+    @WrapWithCondition(
+            method = "run",
+                at = @At(
+                        value = "INVOKE",
+                        target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V"
+                )
+    )
+    private boolean preventOtherValidation(Map<ResourceLocation, LootTable> tables, BiConsumer<ResourceLocation, LootTable> consumer) {
+        return !(this instanceof CustomValidationLootProvider);
+    }
 }

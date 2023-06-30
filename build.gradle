@@ -102,6 +102,7 @@ loom {
             vmArg "-Dfabric-api.datagen"
             vmArg "-Dfabric-api.datagen.output-dir=${file("src/testmod/generated/resources")}"
             vmArg "-Dfabric-api.datagen.modid=testmod"
+            vmArg "-Dporting_lib.datagen.existing_resources=${file("src/testmod/resources")}"
             source sourceSets.testmod
         }
     }

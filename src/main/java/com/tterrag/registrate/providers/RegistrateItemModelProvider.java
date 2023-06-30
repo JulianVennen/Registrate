@@ -3,15 +3,16 @@ package com.tterrag.registrate.providers;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ItemLike;
 
+import io.github.fabricators_of_create.porting_lib.data.ExistingFileHelper;
+import io.github.fabricators_of_create.porting_lib.models.generators.ModelFile.UncheckedModelFile;
+import io.github.fabricators_of_create.porting_lib.models.generators.item.ItemModelBuilder;
+import io.github.fabricators_of_create.porting_lib.models.generators.item.ItemModelProvider;
 import net.fabricmc.api.EnvType;
-import net.minecraftforge.client.model.generators.ItemModelBuilder;
-import net.minecraftforge.client.model.generators.ItemModelProvider;
-import net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile;
-import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class RegistrateItemModelProvider extends ItemModelProvider implements RegistrateProvider {
 
@@ -38,11 +39,11 @@ public class RegistrateItemModelProvider extends ItemModelProvider implements Re
     }
 
     public String modid(NonNullSupplier<? extends ItemLike> item) {
-        return Registry.ITEM.getKey(item.get().asItem()).getNamespace();
+        return BuiltInRegistries.ITEM.getKey(item.get().asItem()).getNamespace();
     }
 
     public String name(NonNullSupplier<? extends ItemLike> item) {
-        return Registry.ITEM.getKey(item.get().asItem()).getPath();
+        return BuiltInRegistries.ITEM.getKey(item.get().asItem()).getPath();
     }
 
     public ResourceLocation itemTexture(NonNullSupplier<? extends ItemLike> item) {

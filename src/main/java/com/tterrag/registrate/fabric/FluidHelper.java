@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.minecraft.Util;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -13,7 +14,7 @@ import net.minecraft.world.level.material.FluidState;
 
 public class FluidHelper {
 	public static String getDescriptionId(Fluid fluid) {
-		return Util.makeDescriptionId("fluid", Registry.FLUID.getKey(fluid));
+		return Util.makeDescriptionId("fluid", BuiltInRegistries.FLUID.getKey(fluid));
 	}
 
 	public static int fluidLuminanceFromBlockState(BlockState fluidBlockState) {

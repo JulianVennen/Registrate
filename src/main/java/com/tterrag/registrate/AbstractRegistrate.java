@@ -18,8 +18,10 @@ import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateProvider;
 import com.tterrag.registrate.util.CreativeModeTabModifier;
 import com.tterrag.registrate.util.DebugMarkers;
+import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.*;
+import io.github.fabricators_of_create.porting_lib.data.ExistingFileHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Value;
@@ -28,13 +30,17 @@ import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Util;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.core.DefaultedMappedRegistry;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
+import net.minecraft.core.WritableRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -54,10 +60,7 @@ import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.Material;
-import net.minecraftforge.common.data.ExistingFileHelper;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.config.RegistryBuilder;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.Message;
 import org.jetbrains.annotations.Nullable;
@@ -68,7 +71,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -132,7 +134,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     /**
      * Checks if Minecraft is running from a dev environment. Enables certain debug logging.
      *
-     * @return {@code true} when in a dev environment (specifically, {@link FMLEnvironment#naming} == "mcp")
+     * @return {@code true} when in a dev environment
      */
     public static boolean isDevEnvironment() {
         return FabricLoader.getInstance().isDevelopmentEnvironment();
@@ -187,14 +189,19 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
             onRegister(registry);
             onRegisterLate(registry);
         });
+        creativeModeTabModifiers.forEach((key, consumer) ->
+                ItemGroupEvents.modifyEntriesEvent(key).register(entries ->
+                        consumer.accept(
+                                new CreativeModeTabModifier(
+                                        entries::getEnabledFeatures, entries::shouldShowOpRestrictedItems, entries::accept
+                                )
+                        )
+                )
+        );
     }
 
     protected void onRegister(Registry<?> registry) {
         ResourceKey<? extends Registry<?>> type = registry.key();
-        if (type == null) {
-            log.debug(DebugMarkers.REGISTER, "Skipping invalid registry with no supertype: " + type);
-            return;
-        }
         if (!registerCallbacks.isEmpty()) {
             registerCallbacks.asMap().forEach((k, v) -> log.warn("Found {} unused register callback(s) for entry {} [{}]. Was the entry ever registered?", v.size(), k.getLeft(), k.getRight().location()));
             registerCallbacks.clear();
@@ -222,52 +229,29 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     /**
-     * Called once per registry at the {@link EventPriority#LOWEST lowest priority} to perform any actions that must happen after all other entries have been registered, including from other mods. May
+     * Called once per registry after the normal onRegister callback. May
      * be overriden in custom implementations to perform additional actions upon entry registration, but <i>must</i> call {@code super}.
-     *
-     * @param event
-     *            The {@link RegisterEvent} being fired, use {@link RegisterEvent#getRegistryKey()} to query the registry type
      */
-    protected void onRegisterLate(Registry<?> event) {
-        @SuppressWarnings("unchecked")
-        ResourceKey<? extends Registry<?>> type = event.key();
+    protected void onRegisterLate(Registry<?> registry) {
+        ResourceKey<? extends Registry<?>> type = registry.key();
         Collection<Runnable> callbacks = afterRegisterCallbacks.get(type);
         callbacks.forEach(Runnable::run);
         callbacks.clear();
         completedRegistrations.add(type);
     }
 
-    /**
-     * Called when a {@link CreativeModeTab} is being populated to fill in any entries that belong there. Can be overriden in custom implementations.
-     *
-     * @param event
-     *            The event
-     */
-    protected void onBuildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
-        var modifier = new CreativeModeTabModifier(event::getFlags, event::hasPermissions, event::accept);
-
-        creativeModeTabModifiers.forEach((key, value) -> {
-            if(event.getTabKey().equals(key)) value.accept(modifier);
-        });
-    }
-
     @Nullable
     private RegistrateDataProvider provider;
-/**
-     * Called when datagen begins to add our provider to the generator. Can be overriden in custom implementations.
-     *
-     * @param event
-     *            The event
-     */
+
     /**
      * Setup this Registrate for Data Generation. Should be called from a {@link DataGeneratorEntrypoint}.
      * An {@link ExistingFileHelper} should be created and provided.
-     * @see ExistingFileHelper#standard()
+     * @see ExistingFileHelper#withResourcesFromArg()
      * @see ExistingFileHelper#withResources(Path...)
      * @see ExistingFileHelper#ExistingFileHelper(Collection, Set, boolean, String, File)
      */
-    public void setupDatagen(FabricDataGenerator generator, ExistingFileHelper existingFileHelper) {
-        generator.addProvider(true, provider = new RegistrateDataProvider(this, modid, generator, existingFileHelper));
+    public void setupDatagen(FabricDataGenerator.Pack pack, ExistingFileHelper existingFileHelper) {
+        pack.addProvider((output, future) -> provider = new RegistrateDataProvider(this, modid, existingFileHelper, output, future));
     }
 
     /**
@@ -690,7 +674,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
      * Registers a new modifier callback to be used to modify the given CreativeModeTab.
      *
      * <p>
-     * Registers a new callback to be invoked during the {@link BuildCreativeModeTabContentsEvent} event and
+     * Registers a new callback to be invoked during tab initialization and
      * used to modify what items are displayed on the given {@link CreativeModeTab}.
      * <p>
      * Calling this method multiple times will add additional callbacks.
@@ -829,20 +813,22 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
 
     @Beta
     public <R> ResourceKey<Registry<R>> makeRegistry(FabricRegistryBuilder<R, ?> builder) {
+        //noinspection unchecked
         return (ResourceKey<Registry<R>>) builder.buildAndRegister().key();
     }
 
     @Beta
-    public <R> ResourceKey<Registry<R>> makeRegistry(String name, Class<R> type) {
-        FabricRegistryBuilder<R, MappedRegistry<R>> builder = FabricRegistryBuilder
-                .createSimple(type, new ResourceLocation(getModid(), name));
+    public <R> ResourceKey<Registry<R>> makeRegistry(String name) {
+        FabricRegistryBuilder<R, MappedRegistry<R>> builder = FabricRegistryBuilder.createSimple(
+                ResourceKey.createRegistryKey(new ResourceLocation(getModid(), name))
+        );
         return makeRegistry(builder);
     }
 
     @Beta
-    public <R> ResourceKey<Registry<R>> makeRegistry(String name, Class<R> type, RegistryAttribute... attributes) {
+    public <R> ResourceKey<Registry<R>> makeRegistry(String name, RegistryAttribute... attributes) {
         FabricRegistryBuilder<R, MappedRegistry<R>> builder = FabricRegistryBuilder
-                .createSimple(type, new ResourceLocation(getModid(), name));
+                .createSimple(ResourceKey.createRegistryKey(new ResourceLocation(getModid(), name)));
         for (RegistryAttribute attribute : attributes) {
             builder.attribute(attribute);
         }
@@ -850,21 +836,21 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     }
 
     @Beta
-    public <R> ResourceKey<Registry<R>> makeRegistry(String name, String defaultName, Class<R> type) {
-        return makeRegistry(name, new ResourceLocation(getModid(), defaultName), type);
+    public <R> ResourceKey<Registry<R>> makeRegistry(String name, String defaultName) {
+        return makeRegistry(name, new ResourceLocation(getModid(), defaultName));
     }
 
     @Beta
-    public <R> ResourceKey<Registry<R>> makeRegistry(String name, ResourceLocation defaultId, Class<R> type) {
-        FabricRegistryBuilder<R, DefaultedRegistry<R>> builder = FabricRegistryBuilder
-                .createDefaulted(type, defaultId, new ResourceLocation(getModid(), name));
+    public <R> ResourceKey<Registry<R>> makeRegistry(String name, ResourceLocation defaultId) {
+        ResourceKey<Registry<R>> key = ResourceKey.createRegistryKey(new ResourceLocation(getModid(), name));
+        FabricRegistryBuilder<R, DefaultedMappedRegistry<R>> builder = FabricRegistryBuilder.createDefaulted(key, defaultId);
         return makeRegistry(builder);
     }
 
     @Beta
-    public <R> ResourceKey<Registry<R>> makeRegistry(String name, ResourceLocation defaultId, Class<R> type, RegistryAttribute... attributes) {
-        FabricRegistryBuilder<R, DefaultedRegistry<R>> builder = FabricRegistryBuilder
-                .createDefaulted(type, defaultId, new ResourceLocation(getModid(), name));
+    public <R> ResourceKey<Registry<R>> makeRegistry(String name, ResourceLocation defaultId, RegistryAttribute... attributes) {
+        ResourceKey<Registry<R>> key = ResourceKey.createRegistryKey(new ResourceLocation(getModid(), name));
+        FabricRegistryBuilder<R, DefaultedMappedRegistry<R>> builder = FabricRegistryBuilder.createDefaulted(key, defaultId);
         for (RegistryAttribute attribute : attributes) {
             builder.attribute(attribute);
         }
@@ -1119,7 +1105,7 @@ public abstract class AbstractRegistrate<S extends AbstractRegistrate<S>> {
     public <P> NoConfigBuilder<CreativeModeTab, CreativeModeTab, P> defaultCreativeTab(P parent, String name, Consumer<CreativeModeTab.Builder> config) {
         this.defaultCreativeModeTab = ResourceKey.create(Registries.CREATIVE_MODE_TAB, new ResourceLocation(this.modid, name));
         return this.generic(parent, name, Registries.CREATIVE_MODE_TAB, () -> {
-            var builder = CreativeModeTab.builder()
+            var builder = FabricItemGroup.builder()
                     .icon(() -> getAll(Registries.ITEM).stream().findFirst().map(ItemEntry::cast).map(ItemEntry::asStack).orElse(new ItemStack(Items.AIR)))
                     .title(this.addLang("itemGroup", this.defaultCreativeModeTab.location(), RegistrateLangProvider.toEnglishName(name)));
             config.accept(builder);

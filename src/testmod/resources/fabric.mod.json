@@ -22,7 +22,7 @@
       "com.tterrag.registrate.test.mod.TestMod"
     ],
     "fabric-datagen": [
-      "com.tterrag.registrate.test.mod.TestModDatagen"
+      "com.tterrag.registrate.test.mod.TestMod"
     ]
   },
 

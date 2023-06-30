@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 import com.tterrag.registrate.AbstractRegistrate;
 
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
@@ -22,7 +23,7 @@ public class FluidEntry<T extends SimpleFlowableFluid> extends RegistryEntry<T> 
         super(owner, delegate);
         BlockEntry<? extends Block> block = null;
         try {
-            block = BlockEntry.cast(getSibling(Registry.BLOCK));
+            block = BlockEntry.cast(getSibling(Registries.BLOCK));
         } catch (IllegalArgumentException e) {} // TODO add way to get entry optionally
         this.block = block;
     }

@@ -34,18 +34,18 @@ import org.jetbrains.annotations.NotNull;
 public interface ProviderType<T extends RegistrateProvider> {
 
     // SERVER DATA
-    public static final ProviderType<RegistrateRecipeProvider> RECIPE = register("recipe", (p, e) -> new RegistrateRecipeProvider(p, e.getGenerator().getPackOutput()));
-    public static final ProviderType<RegistrateAdvancementProvider> ADVANCEMENT = register("advancement", (p, e) -> new RegistrateAdvancementProvider(p, e.getGenerator().getPackOutput(), e.getLookupProvider()));
-    public static final ProviderType<RegistrateLootTableProvider> LOOT = register("loot", (p, e) -> new RegistrateLootTableProvider(p, e.getGenerator().getPackOutput()));
-    public static final ProviderType<RegistrateTagsProvider.IntrinsicImpl<Block>> BLOCK_TAGS = register("tags/block", type -> (p, e) -> new RegistrateTagsProvider.IntrinsicImpl<Block>(p, type, "blocks", e.getGenerator().getPackOutput(), Registries.BLOCK, e.getLookupProvider(), block -> block.builtInRegistryHolder().key(), e.getExistingFileHelper()));
-    public static final ProviderType<RegistrateItemTagsProvider> ITEM_TAGS = registerDelegate("tags/item", type -> (p, e, existing) -> new RegistrateItemTagsProvider(p, type, "items", e.getGenerator().getPackOutput(), e.getLookupProvider(), ((TagsProvider<Block>)existing.get(BLOCK_TAGS)).contentsGetter(), e.getExistingFileHelper()));
-    public static final ProviderType<RegistrateTagsProvider.IntrinsicImpl<Fluid>> FLUID_TAGS = register("tags/fluid", type -> (p, e) -> new RegistrateTagsProvider.IntrinsicImpl<Fluid>(p, type, "fluids", e.getGenerator().getPackOutput(), Registries.FLUID, e.getLookupProvider(), fluid -> fluid.builtInRegistryHolder().key(), e.getExistingFileHelper()));
-    public static final ProviderType<RegistrateTagsProvider.IntrinsicImpl<EntityType<?>>> ENTITY_TAGS = register("tags/entity", type -> (p, e) -> new RegistrateTagsProvider.IntrinsicImpl<EntityType<?>>(p, type, "entity_types", e.getGenerator().getPackOutput(), Registries.ENTITY_TYPE, e.getLookupProvider(), entityType -> entityType.builtInRegistryHolder().key(), e.getExistingFileHelper()));
+    public static final ProviderType<RegistrateRecipeProvider> RECIPE = register("recipe", (p, e) -> new RegistrateRecipeProvider(p, e.output()));
+    public static final ProviderType<RegistrateAdvancementProvider> ADVANCEMENT = register("advancement", (p, e) -> new RegistrateAdvancementProvider(p, e.output(), e.registriesLookup()));
+    public static final ProviderType<RegistrateLootTableProvider> LOOT = register("loot", (p, e) -> new RegistrateLootTableProvider(p, e.output()));
+    public static final ProviderType<RegistrateTagsProvider.IntrinsicImpl<Block>> BLOCK_TAGS = register("tags/block", type -> (p, e) -> new RegistrateTagsProvider.IntrinsicImpl<Block>(p, type, "blocks", e.output(), Registries.BLOCK, e.registriesLookup(), block -> block.builtInRegistryHolder().key()));
+    public static final ProviderType<RegistrateItemTagsProvider> ITEM_TAGS = registerDelegate("tags/item", type -> (p, e, existing) -> new RegistrateItemTagsProvider(p, type, "items", e.output(), e.registriesLookup(), ((TagsProvider<Block>)existing.get(BLOCK_TAGS)).contentsGetter(), e.helper()));
+    public static final ProviderType<RegistrateTagsProvider.IntrinsicImpl<Fluid>> FLUID_TAGS = register("tags/fluid", type -> (p, e) -> new RegistrateTagsProvider.IntrinsicImpl<Fluid>(p, type, "fluids", e.output(), Registries.FLUID, e.registriesLookup(), fluid -> fluid.builtInRegistryHolder().key()));
+    public static final ProviderType<RegistrateTagsProvider.IntrinsicImpl<EntityType<?>>> ENTITY_TAGS = register("tags/entity", type -> (p, e) -> new RegistrateTagsProvider.IntrinsicImpl<EntityType<?>>(p, type, "entity_types", e.output(), Registries.ENTITY_TYPE, e.registriesLookup(), entityType -> entityType.builtInRegistryHolder().key()));
 
     // CLIENT DATA
-    public static final ProviderType<RegistrateBlockstateProvider> BLOCKSTATE = register("blockstate", (p, e) -> new RegistrateBlockstateProvider(p, e.getGenerator().getPackOutput(), e.getExistingFileHelper()));
-    public static final ProviderType<RegistrateItemModelProvider> ITEM_MODEL = register("item_model", (p, e, existing) -> new RegistrateItemModelProvider(p, e.getGenerator().getPackOutput(), ((RegistrateBlockstateProvider)existing.get(BLOCKSTATE)).getExistingFileHelper()));
-    public static final ProviderType<RegistrateLangProvider> LANG = register("lang", (p, e) -> new RegistrateLangProvider(p, e.getGenerator().getPackOutput()));
+    public static final ProviderType<RegistrateBlockstateProvider> BLOCKSTATE = register("blockstate", (p, e) -> new RegistrateBlockstateProvider(p, e.output(), e.helper()));
+    public static final ProviderType<RegistrateItemModelProvider> ITEM_MODEL = register("item_model", (p, e, existing) -> new RegistrateItemModelProvider(p, e.output(), ((RegistrateBlockstateProvider)existing.get(BLOCKSTATE)).getExistingFileHelper()));
+    public static final ProviderType<RegistrateLangProvider> LANG = register("lang", (p, e) -> new RegistrateLangProvider(p, e.output()));
 
     T create(AbstractRegistrate<?> parent, RegistrateDataProvider.DataInfo info, Map<ProviderType<?>, RegistrateProvider> existing);
 

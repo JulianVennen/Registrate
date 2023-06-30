@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -73,7 +74,7 @@ public class BlockEntityBuilder<T extends BlockEntity, P> extends AbstractBuilde
     private NonNullSupplier<NonNullFunction<BlockEntityRendererProvider.Context, BlockEntityRenderer<? super T>>> renderer;
 
     protected BlockEntityBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, BlockEntityFactory<T> factory) {
-        super(owner, parent, name, callback, Registry.BLOCK_ENTITY_TYPE_REGISTRY);
+        super(owner, parent, name, callback, Registries.BLOCK_ENTITY_TYPE);
         this.factory = factory;
     }
     

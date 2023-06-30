@@ -1,14 +1,15 @@
 package com.tterrag.registrate.providers.loot;
 
-import com.tterrag.registrate.AbstractRegistrate;
-import lombok.RequiredArgsConstructor;
+import java.util.function.Consumer;
 
+import javax.annotation.processing.Generated;
+
+import com.tterrag.registrate.AbstractRegistrate;
+
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider;
-import net.minecraft.core.registries.Registries;
-import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 
 import net.minecraft.data.loot.BlockLootSubProvider;
-import net.minecraft.data.loot.packs.VanillaBlockLoot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
@@ -25,19 +26,15 @@ public class RegistrateBlockLootTables extends FabricBlockLootTableProvider impl
     private final AbstractRegistrate<?> parent;
     private final Consumer<RegistrateBlockLootTables> callback;
 
-    public RegistrateBlockLootTables(AbstractRegistrate<?> parent, Consumer<RegistrateBlockLootTables> callback, FabricDataGenerator dataGenerator) {
-        super(dataGenerator);
+    public RegistrateBlockLootTables(AbstractRegistrate<?> parent, Consumer<RegistrateBlockLootTables> callback, FabricDataOutput output) {
+        super(output);
         this.parent = parent;
         this.callback = callback;
     }
-    @Override
-    protected void generateBlockLootTables() {
-        callback.accept(this);
-    }
 
-//    @Override
-    protected Iterable<Block> getKnownBlocks() {
-        return parent.getAll(Registries.BLOCK).stream().map(Supplier::get).collect(Collectors.toList());
+    @Override
+    public void generate() {
+        callback.accept(this);
     }
 
     // @formatter:off
@@ -87,11 +84,6 @@ public class RegistrateBlockLootTables extends FabricBlockLootTableProvider impl
     /** Generated override to expose protected method: {@link BlockLootSubProvider#createSilkTouchOnlyTable} */
     @Generated(value = "com.tterrag.registrate.test.meta.UpdateBlockLootTables", date = "Fri, 9 Jun 2023 03:54:51 GMT")
     public static LootTable.Builder createSilkTouchOnlyTable(ItemLike p_252216_) { return BlockLootSubProvider.createSilkTouchOnlyTable(p_252216_); }
-
-    /** Generated override to expose protected method: {@link BlockLootSubProvider#createPotFlowerItemTable} */
-    @Override
-    @Generated(value = "com.tterrag.registrate.test.meta.UpdateBlockLootTables", date = "Fri, 9 Jun 2023 03:54:51 GMT")
-    public LootTable.Builder createPotFlowerItemTable(ItemLike p_249395_) { return super.createPotFlowerItemTable(p_249395_); }
 
     /** Generated override to expose protected method: {@link BlockLootSubProvider#createSlabItemTable} */
     @Override

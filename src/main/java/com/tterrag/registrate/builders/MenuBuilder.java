@@ -13,9 +13,11 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 
@@ -48,7 +50,7 @@ public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & Men
     }
 
     public MenuBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, ForgeMenuFactory<T> factory, NonNullSupplier<ScreenFactory<T, S>> screenFactory) {
-        super(owner, parent, name, callback, Registry.MENU_REGISTRY);
+        super(owner, parent, name, callback, Registries.MENU);
         this.forgeFactory = factory;
         this.factory = null;
         this.screenFactory = screenFactory;
@@ -63,7 +65,7 @@ public class MenuBuilder<T extends AbstractContainerMenu, S extends Screen & Men
             ret = new ExtendedScreenHandlerType<>((windowId, inv, buf) -> factory.create(supplier.get(), windowId, inv, buf));
         } else {
             MenuFactory<T> factory = this.factory;
-            ret = new MenuType<>((syncId, inventory) -> factory.create(supplier.get(), syncId, inventory));
+            ret = new MenuType<>((syncId, inventory) -> factory.create(supplier.get(), syncId, inventory), FeatureFlags.VANILLA_SET);
         }
         EnvExecutor.runWhenOn(EnvType.CLIENT, () -> () -> {
             ScreenFactory<T, S> screenFactory = this.screenFactory.get();

@@ -8,7 +8,10 @@ import java.util.function.Consumer;
 import com.tterrag.registrate.AbstractRegistrate;
 
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.SimpleFabricLootTableProvider;
+import org.jetbrains.annotations.NotNull;
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -22,13 +25,14 @@ public class RegistrateEntityLootTables extends SimpleFabricLootTableProvider im
 
     private final Map<ResourceLocation, Builder> entries = new HashMap<>();
 
-    public RegistrateEntityLootTables(AbstractRegistrate<?> parent, Consumer<RegistrateEntityLootTables> callback, FabricDataGenerator dataGenerator) {
-        super(dataGenerator, LootContextParamSets.ENTITY);
+    public RegistrateEntityLootTables(AbstractRegistrate<?> parent, Consumer<RegistrateEntityLootTables> callback, FabricDataOutput output) {
+        super(output, LootContextParamSets.ENTITY);
         this.parent = parent;
         this.callback = callback;
     }
+
     @Override
-    public void accept(BiConsumer<ResourceLocation, Builder> consumer) {
+    public void generate(@NotNull BiConsumer<ResourceLocation, Builder> consumer) {
         callback.accept(this);
         entries.forEach(consumer);
     }

@@ -19,11 +19,10 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
-import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -126,7 +125,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     private final List<TagKey<Fluid>> tags = new ArrayList<>();
 
     public FluidBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, ResourceLocation stillTexture, ResourceLocation flowingTexture, NonNullFunction<SimpleFlowableFluid.Properties, T> fluidFactory) {
-        super(owner, parent, "flowing_" + name, callback, Registry.FLUID_REGISTRY);
+        super(owner, parent, "flowing_" + name, callback, Registries.FLUID);
         this.sourceName = name;
         this.bucketName = name + "_bucket";
         this.stillTexture = stillTexture;
@@ -134,8 +133,8 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
         this.fluidFactory = fluidFactory;
 
         String bucketName = this.bucketName;
-        this.fluidProperties = p -> p.bucket(() -> owner.get(bucketName, Registry.ITEM_REGISTRY).get())
-                .block(() -> owner.<Block, LiquidBlock>get(name, Registry.BLOCK_REGISTRY).get());
+        this.fluidProperties = p -> p.bucket(() -> owner.get(bucketName, Registries.ITEM).get())
+                .block(() -> owner.<Block, LiquidBlock>get(name, Registries.BLOCK).get());
     }
 
     /**
@@ -400,10 +399,6 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
     @Environment(EnvType.CLIENT)
     protected void registerDefaultRenderer(T flowing) {
         FluidRenderHandlerRegistry.INSTANCE.register(getSource(), flowing, new SimpleFluidRenderHandler(stillTexture, flowingTexture));
-        ClientSpriteRegistryCallback.event(InventoryMenu.BLOCK_ATLAS).register((atlas, registry) -> {
-            registry.register(stillTexture);
-            registry.register(flowingTexture);
-        });
     }
 
     /**
@@ -438,7 +433,7 @@ public class FluidBuilder<T extends SimpleFlowableFluid, P> extends AbstractBuil
 
         NonNullSupplier<? extends SimpleFlowableFluid> source = this.source;
         if (source != null) {
-            getCallback().accept(sourceName, Registry.FLUID_REGISTRY, (FluidBuilder) this, source::get);
+            getCallback().accept(sourceName, Registries.FLUID, (FluidBuilder) this, source::get);
         } else {
             throw new IllegalStateException("Fluid must have a source version: " + getName());
         }

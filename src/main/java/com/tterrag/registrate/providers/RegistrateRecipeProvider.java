@@ -5,18 +5,24 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.annotation.processing.Generated;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonObject;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.DataIngredient;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
+
+import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.critereon.EnterBlockTrigger;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.BlockFamily;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.PackOutput;
@@ -30,7 +36,6 @@ import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.data.recipes.SingleItemRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
@@ -41,13 +46,12 @@ import net.minecraft.world.level.block.Block;
 
 import me.alphamode.forgetags.Tags;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import org.jetbrains.annotations.Nullable;
 
 public class RegistrateRecipeProvider extends FabricRecipeProvider implements RegistrateProvider, Consumer<FinishedRecipe> {
     private final AbstractRegistrate<?> owner;
 
-    public RegistrateRecipeProvider(AbstractRegistrate<?> owner, PackOutput output) {
+    public RegistrateRecipeProvider(AbstractRegistrate<?> owner, FabricDataOutput output) {
         super(output);
         this.owner = owner;
     }
@@ -69,7 +73,7 @@ public class RegistrateRecipeProvider extends FabricRecipeProvider implements Re
     }
 
     @Override
-    protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
+    public void buildRecipes(Consumer<FinishedRecipe> consumer) {
         this.callback = consumer;
         owner.genData(ProviderType.RECIPE, this);
         this.callback = null;
@@ -84,7 +88,7 @@ public class RegistrateRecipeProvider extends FabricRecipeProvider implements Re
     }
 
     public ResourceLocation safeId(ItemLike registryEntry) {
-        return safeId(Registry.ITEM.getKey(registryEntry.asItem()));
+        return safeId(BuiltInRegistries.ITEM.getKey(registryEntry.asItem()));
     }
 
     public String safeName(ResourceLocation id) {
@@ -199,7 +203,7 @@ public class RegistrateRecipeProvider extends FabricRecipeProvider implements Re
         square(source, category, output, false);
         // This is backwards, but leaving in for binary compat
         singleItemUnfinished(source, category, output, 1, 9)
-            .save(this, safeId(source) + "_from_" + safeName(Registry.ITEM.getKey(output.get().asItem())));
+            .save(this, safeId(source) + "_from_" + safeName(BuiltInRegistries.ITEM.getKey(output.get().asItem())));
     }
 
     public <T extends ItemLike> void storage(NonNullSupplier<? extends T> source, RecipeCategory category, NonNullSupplier<? extends T> output) {
@@ -209,7 +213,7 @@ public class RegistrateRecipeProvider extends FabricRecipeProvider implements Re
     public <T extends ItemLike> void storage(DataIngredient sourceIngredient, RecipeCategory category, NonNullSupplier<? extends T> source, DataIngredient outputIngredient, NonNullSupplier<? extends T> output) {
         square(sourceIngredient, category, output, false);
         singleItemUnfinished(outputIngredient, category, source, 1, 9)
-            .save(this, safeId(sourceIngredient) + "_from_" + safeName(Registry.ITEM.getKey(output.get().asItem())));
+            .save(this, safeId(sourceIngredient) + "_from_" + safeName(BuiltInRegistries.ITEM.getKey(output.get().asItem())));
     }
 
 //    @CheckReturnValue
@@ -303,20 +307,10 @@ public class RegistrateRecipeProvider extends FabricRecipeProvider implements Re
     // @formatter:off
     // GENERATED START - DO NOT EDIT BELOW THIS LINE
 
-    /** Generated override to expose protected method: {@link RecipeProvider#saveAdvancement} */
-    @Override
-    @Generated(value = "com.tterrag.registrate.test.meta.UpdateRecipeProvider", date = "Fri, 9 Jun 2023 04:03:23 GMT")
-    public CompletableFuture<?> saveAdvancement(CachedOutput output, FinishedRecipe finishedRecipe, JsonObject advancementJson) { return super.saveAdvancement(output, finishedRecipe, advancementJson); }
-
     /** Generated override to expose protected method: {@link RecipeProvider#buildAdvancement} */
     @Override
     @Generated(value = "com.tterrag.registrate.test.meta.UpdateRecipeProvider", date = "Fri, 9 Jun 2023 04:03:23 GMT")
     public CompletableFuture<?> buildAdvancement(CachedOutput p_253674_, ResourceLocation p_254102_, Advancement.Builder p_253712_) { return super.buildAdvancement(p_253674_, p_254102_, p_253712_); }
-
-    /** Generated override to expose protected method: {@link RecipeProvider#generateForEnabledBlockFamilies} */
-    @Override
-    @Generated(value = "com.tterrag.registrate.test.meta.UpdateRecipeProvider", date = "Fri, 9 Jun 2023 04:03:23 GMT")
-    public void generateForEnabledBlockFamilies(Consumer<FinishedRecipe> p_249188_, FeatureFlagSet p_251836_) { super.generateForEnabledBlockFamilies(p_249188_, p_251836_); }
 
     /** Generated override to expose protected method: {@link RecipeProvider#oreSmelting} */
     @Generated(value = "com.tterrag.registrate.test.meta.UpdateRecipeProvider", date = "Fri, 9 Jun 2023 04:03:23 GMT")

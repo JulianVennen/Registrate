@@ -1,30 +1,5 @@
 package com.tterrag.registrate.providers;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Consumer;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.tterrag.registrate.AbstractRegistrate;
-import lombok.extern.log4j.Log4j2;
-
-import net.minecraft.advancements.Advancement;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.data.CachedOutput;
-import net.minecraft.data.DataProvider;
-import net.minecraft.data.PackOutput;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-
-import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +8,23 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.tterrag.registrate.AbstractRegistrate;
+import lombok.extern.log4j.Log4j2;
+import net.fabricmc.api.EnvType;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.advancements.Advancement;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.HolderLookup.Provider;
+import net.minecraft.data.CachedOutput;
+import net.minecraft.data.DataProvider;
+import net.minecraft.data.PackOutput;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
+
 @Log4j2
 public class RegistrateAdvancementProvider implements RegistrateProvider, Consumer<Advancement> {
 
@@ -40,7 +32,7 @@ public class RegistrateAdvancementProvider implements RegistrateProvider, Consum
 
     private final AbstractRegistrate<?> owner;
     private final PackOutput packOutput;
-    private final CompletableFuture<HolderLookup.Provider> registriesLookup;
+    private final CompletableFuture<Provider> registriesLookup;
     private final List<CompletableFuture<?>> advancementsToSave = Lists.newArrayList();
 
     public RegistrateAdvancementProvider(AbstractRegistrate<?> owner, PackOutput packOutputIn, CompletableFuture<HolderLookup.Provider> registriesLookupIn) {

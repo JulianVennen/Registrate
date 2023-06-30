@@ -1,11 +1,11 @@
 package com.tterrag.registrate.providers;
 
-import java.io.IOException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.BiMap;
@@ -14,22 +14,17 @@ import com.google.common.collect.Lists;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.util.DebugMarkers;
 import com.tterrag.registrate.util.nullness.NonnullType;
+import io.github.fabricators_of_create.porting_lib.data.ExistingFileHelper;
 import lombok.extern.log4j.Log4j2;
 
-import net.minecraft.core.HolderLookup;
+import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
-import net.minecraft.data.HashCache;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nullable;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class RegistrateDataProvider implements DataProvider {
@@ -43,13 +38,13 @@ public class RegistrateDataProvider implements DataProvider {
 
     private final String mod;
     private final Map<ProviderType<?>, RegistrateProvider> subProviders = new LinkedHashMap<>();
-    private final CompletableFuture<HolderLookup.Provider> registriesLookup;
+    private final CompletableFuture<Provider> registriesLookup;
 
-    record DataInfo(FabricDataGenerator generator, ExistingFileHelper helper) {}
+    record DataInfo(FabricDataOutput output, ExistingFileHelper helper, CompletableFuture<Provider> registriesLookup) {}
 
-    public RegistrateDataProvider(AbstractRegistrate<?> parent, String modid, FabricDataGenerator generator, ExistingFileHelper helper) {
+    public RegistrateDataProvider(AbstractRegistrate<?> parent, String modid, ExistingFileHelper helper, FabricDataOutput output, CompletableFuture<Provider> registriesLookup) {
         this.mod = modid;
-        this.registriesLookup = event.getLookupProvider();
+        this.registriesLookup = registriesLookup;
 
         EnumSet<EnvType> sides = EnumSet.noneOf(EnvType.class);
 //        if (event.includeServer()) {
@@ -62,7 +57,7 @@ public class RegistrateDataProvider implements DataProvider {
         Map<ProviderType<?>, RegistrateProvider> known = new HashMap<>();
         for (String id : TYPES.keySet()) {
             ProviderType<?> type = TYPES.get(id);
-            RegistrateProvider prov = type.create(parent, new DataInfo(generator, helper), known);
+            RegistrateProvider prov = type.create(parent, new DataInfo(output, helper, registriesLookup), known);
             known.put(type, prov);
             if (sides.contains(prov.getSide())) {
                 log.debug(DebugMarkers.DATA, "Adding provider for type: {}", id);

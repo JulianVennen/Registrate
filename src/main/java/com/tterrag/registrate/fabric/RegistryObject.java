@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
 public class RegistryObject<T> implements Supplier<T> {
@@ -36,7 +37,8 @@ public class RegistryObject<T> implements Supplier<T> {
 	}
 
 	public static <T, U extends T> RegistryObject<U> create(final ResourceLocation name, final ResourceLocation registryName, String modid) {
-		return new RegistryObject<>(name, (Registry<U>) Registry.REGISTRY.get(registryName));
+		//noinspection unchecked
+		return new RegistryObject<>(name, (Registry<U>) BuiltInRegistries.REGISTRY.get(registryName));
 	}
 
 	@SuppressWarnings("unchecked")
