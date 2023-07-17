@@ -7,16 +7,16 @@ import com.tterrag.registrate.AbstractRegistrate;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.FabricTagBuilder;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.core.Registry;
-import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 
 public interface RegistrateTagsProvider<T> extends RegistrateProvider {
-    TagsProvider.TagAppender<T> addTag(TagKey<T> tag);
+    FabricTagBuilder addTag(TagKey<T> tag);
 
     class Impl<T> extends FabricTagProvider<T> implements RegistrateTagsProvider<T> {
         private final AbstractRegistrate<?> owner;
